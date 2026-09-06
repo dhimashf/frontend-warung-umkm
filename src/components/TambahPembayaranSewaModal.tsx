@@ -40,7 +40,9 @@ const AddBayarSewaModal: React.FC<AddBayarSewaModalProps> = ({ isOpen, onClose }
   useEffect(() => {
     const fetchPenyewaanData = async () => {
       try {
-        const response = await axios.get('https://backend-umkm-riau.vercel.app/api/penyewaan');
+        const token = localStorage.getItem('token');
+        const config = { headers: { Authorization: `Bearer ${token}` } };
+        const response = await axios.get(process.env.NEXT_PUBLIC_API_URL + '/api/penyewaan', config);
         const pembelianData = response.data.data;
         // Filter penyewaan data to ensure booth_id_booth is not null
         const filteredData = pembelianData.filter((item: Pembelian) => item.booth_id_booth !== null);
@@ -49,7 +51,7 @@ const AddBayarSewaModal: React.FC<AddBayarSewaModalProps> = ({ isOpen, onClose }
         const optionsWithNama = await Promise.all(
           filteredData.map(async (item: Pembelian) => {
             try {
-              const biodataResponse = await axios.get(`https://backend-umkm-riau.vercel.app/api/biodata/nik/${item.biodata_nik}`);
+              const biodataResponse = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/biodata/nik/${item.biodata_nik}`, config);
               return {
                 id_sewa: item.id_sewa,
                 nama: biodataResponse.data.data.nama,
@@ -116,7 +118,7 @@ const AddBayarSewaModal: React.FC<AddBayarSewaModalProps> = ({ isOpen, onClose }
 
     try {
       const response = await axios.post(
-        'https://backend-umkm-riau.vercel.app/api/sewa/add',
+        process.env.NEXT_PUBLIC_API_URL + '/api/sewa/add',
         form,
         {
           headers: {

@@ -50,10 +50,12 @@ const CashDetail: React.FC = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
+        const token = localStorage.getItem("token");
+        const config = { headers: { Authorization: `Bearer ${token}` } };
     
         // Fetch data pembelian
         const pembelianRes = await axios.get(
-          `https://backend-umkm-riau.vercel.app/api/pembelian/id/${id}`
+          `${process.env.NEXT_PUBLIC_API_URL}/api/pembelian/id/${id}`, config
         );
     
         // Default values in case of error
@@ -63,7 +65,7 @@ const CashDetail: React.FC = () => {
         try {
           // Fetch data produk
           const produkRes = await axios.get(
-            `https://backend-umkm-riau.vercel.app/api/produk/${id}`
+            `${process.env.NEXT_PUBLIC_API_URL}/api/produk/${id}`, config
           );
           produk = produkRes.data.data;
         } catch (produkError) {
@@ -73,7 +75,7 @@ const CashDetail: React.FC = () => {
         try {
           // Fetch data bukti
           const buktiRes = await axios.get(
-            `https://backend-umkm-riau.vercel.app/api/bukti/${id}`
+            `${process.env.NEXT_PUBLIC_API_URL}/api/bukti/${id}`, config
           );
           pembayaran = buktiRes.data.data;
         } catch (buktiError) {

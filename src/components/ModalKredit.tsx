@@ -100,7 +100,7 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ isOpen, onClose }) => {
 
                 console.log('Data yang akan dikirim ke endpoint tahap 1:', pembelianData);
                 const pembelianResponse = await axios.post(
-                    'https://backend-umkm-riau.vercel.app/api/pembelian/credit',
+                    process.env.NEXT_PUBLIC_API_URL + '/api/pembelian/credit',
                     pembelianData, {
                     headers: {
                         'Content-Type': 'multipart/form-data',
@@ -125,7 +125,7 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ isOpen, onClose }) => {
                 };
 
                 console.log('Data yang akan dikirim ke endpoint tahap 2:', produkData);
-                await axios.post('https://backend-umkm-riau.vercel.app/api/produk', produkData, {
+                await axios.post(process.env.NEXT_PUBLIC_API_URL + '/api/produk', produkData, {
 
                 });
                 setCurrentStep(3); // Melanjutkan ke langkah 3
@@ -138,7 +138,7 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ isOpen, onClose }) => {
                 }
                 formDataToSend.append('jumlah', formData.jumlahBayar.toString());
 
-                await axios.post('https://backend-umkm-riau.vercel.app/api/bukti', formDataToSend, {
+                await axios.post(process.env.NEXT_PUBLIC_API_URL + '/api/bukti', formDataToSend, {
                     headers: { 'Content-Type': 'multipart/form-data' },
                 });
 

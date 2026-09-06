@@ -54,7 +54,7 @@ const PengelolaanProduk: React.FC = () => {
     const fetchProducts = async () => {
       try {
         const response = await fetch(
-          "https://backend-umkm-riau.vercel.app/api/dokumentasi"
+          process.env.NEXT_PUBLIC_API_URL + "/api/dokumentasi"
         );
         const data: ApiResponse = await response.json();
 
@@ -122,7 +122,7 @@ const PengelolaanProduk: React.FC = () => {
       }
 
       const response = await fetch(
-        `https://backend-umkm-riau.vercel.app/api/dokumentasi/${product.id}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/dokumentasi/${product.id}`,
         {
           method: "PUT",
           body: formData, // Gunakan FormData, bukan JSON
@@ -171,7 +171,7 @@ const PengelolaanProduk: React.FC = () => {
         }
   
         const response = await fetch(
-          "https://backend-umkm-riau.vercel.app/api/dokumentasi",
+          process.env.NEXT_PUBLIC_API_URL + "/api/dokumentasi",
           {
             method: "POST",
             body: formData,
@@ -236,7 +236,7 @@ const PengelolaanProduk: React.FC = () => {
 
     try {
       const response = await fetch(
-        `https://backend-umkm-riau.vercel.app/api/dokumentasi/${productToDelete.id}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/dokumentasi/${productToDelete.id}`,
         {
           method: "DELETE",
           headers: {

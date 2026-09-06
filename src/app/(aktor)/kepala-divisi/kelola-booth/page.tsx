@@ -23,7 +23,7 @@ export default function Page() {
     const refetchBooths = async () => {
         setIsLoading(true);
         try {
-            const response = await fetch("https://backend-umkm-riau.vercel.app/api/booth");
+            const response = await fetch(process.env.NEXT_PUBLIC_API_URL + "/api/booth");
             const data = await response.json();
 
             if (data.success) {
@@ -52,7 +52,7 @@ export default function Page() {
             const { id_booth, ukuran } = data;
 
             // Kirim data ke API dengan properti yang dibutuhkan
-            const response = await fetch("https://backend-umkm-riau.vercel.app/api/booth", {
+            const response = await fetch(process.env.NEXT_PUBLIC_API_URL + "/api/booth", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

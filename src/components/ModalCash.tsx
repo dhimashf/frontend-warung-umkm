@@ -105,7 +105,7 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ onClose }) => {
                     jenis_kelamin: genderCode,
                 };
 
-                const pembelianResponse = await axios.post('https://backend-umkm-riau.vercel.app/api/pembelian/CASH', pembelianData);
+                const pembelianResponse = await axios.post(process.env.NEXT_PUBLIC_API_URL + '/api/pembelian/CASH', pembelianData);
 
                 const { id } = pembelianResponse.data;
                 setFormData(prevData => ({ ...prevData, id_pembelian: id }));
@@ -120,7 +120,7 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ onClose }) => {
                 }));
 
                 for (const produk of produkData) {
-                    await axios.post('https://backend-umkm-riau.vercel.app/api/produk', produk);
+                    await axios.post(process.env.NEXT_PUBLIC_API_URL + '/api/produk', produk);
                 }
 
                 setCurrentStep(3);
@@ -133,7 +133,7 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ onClose }) => {
                 }
                 formDataToSend.append('jumlah', calculateSubtotal().toString());
 
-                const response = await axios.post('https://backend-umkm-riau.vercel.app/api/bukti', formDataToSend, {
+                const response = await axios.post(process.env.NEXT_PUBLIC_API_URL + '/api/bukti', formDataToSend, {
                     headers: { 'Content-Type': 'multipart/form-data' },
                 });
 

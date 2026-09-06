@@ -20,7 +20,7 @@ const ConfirmationPopup: React.FC<ConfirmationPopupProps> = ({
   cancelText = "Batal",
 }) => {
   return (
-    <div className="fixed top-0 inset-0 z-60 flex items-center justify-center bg-black bg-opacity-50">
+    <div className="fixed top-0 inset-0 z-[70] flex items-center justify-center bg-black bg-opacity-50">
       <div className="relative bg-white p-8 rounded-2xl shadow-lg w-96 max-w-full">
         {/* Icon */}
         <div className="flex justify-center items-center  mb-4">

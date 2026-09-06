@@ -46,6 +46,7 @@ const PengajuanSewa: React.FC = () => {
     setIsLoading(true);
 
     if (biodata && biodata.nik) {
+      const token = localStorage.getItem("token");
       setIsLoading(false);
       setFormData((prevData: RentalRequest) => ({
         ...prevData,
@@ -59,7 +60,9 @@ const PengajuanSewa: React.FC = () => {
       }));
 
       axios
-        .get(`https://backend-umkm-riau.vercel.app/api/penyewaan/${biodata.nik}`)
+        .get(`${process.env.NEXT_PUBLIC_API_URL}/api/penyewaan/nik/${biodata.nik}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
         .then((response) => {
           const penyewaan = response.data.data[0];
           if (penyewaan) {
@@ -162,8 +165,11 @@ const PengajuanSewa: React.FC = () => {
       return;
     }
 
+    const token = localStorage.getItem("token");
     axios
-      .delete(`https://backend-umkm-riau.vercel.app/api/penyewaan/${rentalId}`)
+      .delete(`${process.env.NEXT_PUBLIC_API_URL}/api/penyewaan/${rentalId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
       .then(() => {
         // Redirect or update state after deletion
         alert("Pengajuan penyewaan berhasil dibatalkan.");

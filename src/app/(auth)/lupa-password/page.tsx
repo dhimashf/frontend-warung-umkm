@@ -50,7 +50,7 @@ export default function ForgotPasswordPage() {
         // Forgot password API request (Axios)
         try {
             const response = await axios.put(
-                "https://backend-umkm-riau.vercel.app/api/akun/lupa-password",
+                process.env.NEXT_PUBLIC_API_URL + "/api/akun/lupa-password",
                 { no_hp: no_hp, newPassword: newPassword }
             );
     

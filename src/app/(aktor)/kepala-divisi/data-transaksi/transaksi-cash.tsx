@@ -28,7 +28,9 @@ const TransaksiCash: React.FC = () => {
   useEffect(() => {
     const fetchTransaksiData = async () => {
       try {
-        const transaksiResponse = await axios.get("https://backend-umkm-riau.vercel.app/api/pembelian/CASH");
+        const token = localStorage.getItem("token");
+        const config = { headers: { Authorization: `Bearer ${token}` } };
+        const transaksiResponse = await axios.get(process.env.NEXT_PUBLIC_API_URL + "/api/pembelian/CASH", config);
         const transaksiData = transaksiResponse.data.data;
 
         const updatedData = await Promise.all(
@@ -37,7 +39,7 @@ const TransaksiCash: React.FC = () => {
             let produkError = false;
 
             try {
-              const productResponse = await axios.get(`https://backend-umkm-riau.vercel.app/api/produk/${transaksi.id}`);
+              const productResponse = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/produk/${transaksi.id}`, config);
               const productData = productResponse.data.data;
 
               if (productData.length === 0) {
@@ -48,7 +50,7 @@ const TransaksiCash: React.FC = () => {
               const totalTransaksi = productData.reduce((total: number, item: Product) => total + item.subtotal, 0);
 
               try {
-                const buktiResponse = await axios.get(`https://backend-umkm-riau.vercel.app/api/bukti/${transaksi.id}`);
+                const buktiResponse = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/bukti/${transaksi.id}`, config);
                 if (!buktiResponse.data.data.length) {
                   buktiError = true;
                 }
@@ -112,16 +114,16 @@ const TransaksiCash: React.FC = () => {
         console.log("Kondisi: buktiError && produkError");
         // Hapus pembelian langsung
 
-        const deletePembelian = await axios.delete(`https://backend-umkm-riau.vercel.app/api/pembelian/${id}`);
+        const deletePembelian = await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/pembelian/${id}`);
         console.log("Pembelian berhasil dihapus:", deletePembelian.data);
       } else if (buktiError) {
         console.log("Kondisi: buktiError saja");
         // Hapus produk terlebih dahulu
         console.log("Menghapus produk terlebih dahulu...");
-        const deleteProduk = await axios.delete(`https://backend-umkm-riau.vercel.app/api/produk/${id}`);
+        const deleteProduk = await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/produk/${id}`);
         console.log("Produk berhasil dihapus:", deleteProduk.data);
         // Hapus pembelian setelah produk berhasil dihapus
-        const deletePembelian = await axios.delete(`https://backend-umkm-riau.vercel.app/api/pembelian/${id}`);
+        const deletePembelian = await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/pembelian/${id}`);
         console.log("Pembelian berhasil dihapus:", deletePembelian.data);
 
       } else {

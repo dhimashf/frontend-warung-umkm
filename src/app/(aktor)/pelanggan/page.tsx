@@ -26,10 +26,13 @@ const Dashboard: React.FC = () => {
     const fetchRentalData = async () => {
       try {
         const biodata = localStorage.getItem('biodata');
+        const token = localStorage.getItem('token');
         if (biodata) {
           const { nik, nama } = JSON.parse(biodata);
           console.log(nik, nama);
-          const response = await axios.get(`https://backend-umkm-riau.vercel.app/api/penyewaan/${nik}`);
+          const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/penyewaan/nik/${nik}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
           setRentalData({ ...response.data.data[0], nama });
           console.log(response.data.data[0]);
         } else {
@@ -67,7 +70,7 @@ const Dashboard: React.FC = () => {
         </Link>
 
         {/* Widget Pengajuan Sewa */}
-        <Link href="/pengajuan-sewa" className="block">
+        <Link href="/pelanggan/pengajuan-sewa" className="block">
           <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
             <FaClipboardList className="h-12 w-12 text-primary mb-4" />
             <h2 className="text-xl font-semibold mb-2">Pengajuan Sewa</h2>
@@ -76,7 +79,7 @@ const Dashboard: React.FC = () => {
         </Link>
 
         {/* Widget Booth Saya */}
-        <Link href="/booth-saya" className="block">
+        <Link href="/pelanggan/booth-saya" className="block">
           <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
             <FaStore className="h-12 w-12 text-primary mb-4" />
             <h2 className="text-xl font-semibold mb-2">Booth Saya</h2>
@@ -104,7 +107,7 @@ const Dashboard: React.FC = () => {
           </button>.
         </p>
       </div>
-    ) : rentalData.status === 'DISETUJUI' ? (
+    ) : (rentalData.status === 'DISETUJUI' || rentalData.status === 'DISEWA' || rentalData.status === 'INSPEKSI') ? (
       <div className="flex justify-between items-center">
         {/* Lokasi Booth */}
         <div className="flex flex-col items-center">

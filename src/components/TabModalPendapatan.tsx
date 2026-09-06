@@ -55,13 +55,15 @@ const TabModalPendapatan: React.FC<TabModalPendapatanProps> = ({ isOpen, onClose
     useEffect(() => {
         const fetchData = async () => {
             try {
+                const token = localStorage.getItem('token');
+                const config = { headers: { Authorization: `Bearer ${token}` } };
                 const currentDate = new Date();
                 const currentMonth = currentDate.getMonth();
                 const currentYear = currentDate.getFullYear();
 
                 // Fetch pembelian data
                 const pembelianResponse = await axios.get<{ success: boolean; data: Pembelian[] }>(
-                    'https://backend-umkm-riau.vercel.app/api/pembelian'
+                    process.env.NEXT_PUBLIC_API_URL + '/api/pembelian', config
                 );
                 const pembelianData = pembelianResponse.data;
 
@@ -77,7 +79,7 @@ const TabModalPendapatan: React.FC<TabModalPendapatanProps> = ({ isOpen, onClose
 
                 // Fetch bukti data
                 const buktiResponse = await axios.get<{ success: boolean; data: Bukti[] }>(
-                    'https://backend-umkm-riau.vercel.app/api/bukti'
+                    process.env.NEXT_PUBLIC_API_URL + '/api/bukti', config
                 );
                 const buktiData = buktiResponse.data;
 
@@ -85,7 +87,7 @@ const TabModalPendapatan: React.FC<TabModalPendapatanProps> = ({ isOpen, onClose
 
                 // Fetch produk data
                 const produkResponse = await axios.get<{ success: boolean; data: Produk[] }>(
-                    'https://backend-umkm-riau.vercel.app/api/produk'
+                    process.env.NEXT_PUBLIC_API_URL + '/api/produk', config
                 );
                 const produkData = produkResponse.data;
 
@@ -93,7 +95,7 @@ const TabModalPendapatan: React.FC<TabModalPendapatanProps> = ({ isOpen, onClose
 
                 // Fetch sewa data
                 const sewaResponse = await axios.get<{ success: boolean; data: Sewa[] }>(
-                    'https://backend-umkm-riau.vercel.app/api/sewa'
+                    process.env.NEXT_PUBLIC_API_URL + '/api/sewa', config
                 );
                 const sewaData = sewaResponse.data;
 

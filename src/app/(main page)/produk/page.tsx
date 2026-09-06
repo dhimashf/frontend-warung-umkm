@@ -33,7 +33,7 @@ const ProdukPage: React.FC = () => {
     const fetchProducts = async () => {
       try {
         const response = await axios.get(
-          "https://backend-umkm-riau.vercel.app/api/dokumentasi"
+          process.env.NEXT_PUBLIC_API_URL + "/api/dokumentasi"
         );
         const data = response.data;
         if (data.success) {

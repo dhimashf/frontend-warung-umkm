@@ -51,7 +51,7 @@ export default function Login() {
 
     const fetchBiodata = async (id_akun: string, token: string) => {
         try {
-            const response = await axios.get(`https://backend-umkm-riau.vercel.app/api/BIODATA/${id_akun}`, {
+            const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/BIODATA/${id_akun}`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
@@ -139,7 +139,7 @@ export default function Login() {
         }
 
         try {
-            const response = await axios.post('https://backend-umkm-riau.vercel.app/api/akun/login', {
+            const response = await axios.post(process.env.NEXT_PUBLIC_API_URL + '/api/akun/login', {
                 no_hp: phoneNumber,
                 password: password,
             });

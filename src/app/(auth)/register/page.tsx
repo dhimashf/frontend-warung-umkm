@@ -51,7 +51,7 @@ export default function RegisterPage() {
 
         try {
             const response = await axios.post(
-                "https://backend-umkm-riau.vercel.app/api/akun/register",
+                process.env.NEXT_PUBLIC_API_URL + "/api/akun/register",
                 { no_hp: noHp, password: password }
             );
 

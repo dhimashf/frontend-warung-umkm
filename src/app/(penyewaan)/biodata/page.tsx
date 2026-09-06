@@ -39,14 +39,17 @@ export default function ProfilePage() {
     }
 
     axios
-      .get(`https://backend-umkm-riau.vercel.app/api/biodata/${id}`)
+      .get(`${process.env.NEXT_PUBLIC_API_URL}/api/biodata/${id}`)
       .then((response) => {
         setUser(response.data.data);
         setLoading(false);
         console.log(response.data.data);
 
+        const token = localStorage.getItem('token');
         axios
-          .get(`https://backend-umkm-riau.vercel.app/api/penyewaan/${response.data.data.nik}`)
+          .get(`${process.env.NEXT_PUBLIC_API_URL}/api/penyewaan/nik/${response.data.data.nik}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          })
           .then((penyewaanResponse) => {
             console.log("Ada Ga",penyewaanResponse.data.data.length >0);
 
@@ -75,7 +78,7 @@ export default function ProfilePage() {
     }
 
     try {
-      await axios.delete(`https://backend-umkm-riau.vercel.app/api/biodata/${id}`);
+      await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/biodata/${id}`);
       alert("Biodata berhasil dihapus");
       localStorage.removeItem("biodata");
       router.push("/");

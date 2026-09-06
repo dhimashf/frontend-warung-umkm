@@ -24,8 +24,11 @@ const RiwayatPenyewaan = () => {
   useEffect(() => {
     const fetchPenyewaanData = async () => {
       try {
+        const token = localStorage.getItem("token");
+        const config = { headers: { Authorization: `Bearer ${token}` } };
+        
         const penyewaanResponse = await axios.get(
-          "https://backend-umkm-riau.vercel.app/api/penyewaan"
+          process.env.NEXT_PUBLIC_API_URL + "/api/penyewaan", config
         );
         const penyewaanData = penyewaanResponse.data.data;
   
@@ -37,7 +40,7 @@ const RiwayatPenyewaan = () => {
         const updatedData = await Promise.all(
           filteredData.map(async (item: PenyewaanData) => {
             const biodataResponse = await axios.get(
-              `https://backend-umkm-riau.vercel.app/api/biodata/nik/${item.biodata_nik}`
+              `${process.env.NEXT_PUBLIC_API_URL}/api/biodata/nik/${item.biodata_nik}`, config
             );
             const namaPenyewa = biodataResponse.data.data.nama;
             return {

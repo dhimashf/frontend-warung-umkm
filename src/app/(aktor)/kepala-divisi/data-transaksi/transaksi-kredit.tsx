@@ -27,8 +27,10 @@ const TransaksiKredit: React.FC = () => {
   useEffect(() => {
     const fetchTransaksi = async () => {
       try {
+        const token = localStorage.getItem("token");
+        const config = { headers: { Authorization: `Bearer ${token}` } };
         const pembelianResponse = await axios.get(
-          "https://backend-umkm-riau.vercel.app/api/pembelian/CREDIT"
+          process.env.NEXT_PUBLIC_API_URL + "/api/pembelian/CREDIT", config
         );
         const pembelianData = pembelianResponse.data.data;
 
@@ -41,7 +43,7 @@ const TransaksiKredit: React.FC = () => {
 
             try {
               const buktiResponse = await axios.get(
-                `https://backend-umkm-riau.vercel.app/api/bukti/${item.id}`
+                `${process.env.NEXT_PUBLIC_API_URL}/api/bukti/${item.id}`, config
               );
               jumlah_bukti = buktiResponse.data.data.length - 1;
             } catch (error) {
@@ -51,7 +53,7 @@ const TransaksiKredit: React.FC = () => {
 
             try {
               const produkResponse = await axios.get(
-                `https://backend-umkm-riau.vercel.app/api/produk/${item.id}`
+                `${process.env.NEXT_PUBLIC_API_URL}/api/produk/${item.id}`, config
               );
               if (produkResponse.data.data.length > 0) {
                 jenis_produk = produkResponse.data.data[0]?.jenis_produk || "N/A";
@@ -95,16 +97,16 @@ const TransaksiKredit: React.FC = () => {
         console.log("Kondisi: buktiError && produkError");
         // Hapus pembelian langsung
         
-        const deletePembelian = await axios.delete(`https://backend-umkm-riau.vercel.app/api/pembelian/${id}`);
+        const deletePembelian = await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/pembelian/${id}`);
         console.log("Pembelian berhasil dihapus:", deletePembelian.data);
       } else if (buktiError) {
         console.log("Kondisi: buktiError saja");
         // Hapus produk terlebih dahulu
         console.log("Menghapus produk terlebih dahulu...");
-        const deleteProduk = await axios.delete(`https://backend-umkm-riau.vercel.app/api/produk/${id}`);
+        const deleteProduk = await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/produk/${id}`);
         console.log("Produk berhasil dihapus:", deleteProduk.data);
         // Hapus pembelian setelah produk berhasil dihapus
-        const deletePembelian = await axios.delete(`https://backend-umkm-riau.vercel.app/api/pembelian/${id}`);
+        const deletePembelian = await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/pembelian/${id}`);
         console.log("Pembelian berhasil dihapus:", deletePembelian.data);
 
       } else {

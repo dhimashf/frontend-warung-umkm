@@ -34,7 +34,7 @@ const ProdukFrame: React.FC = () => {
     const fetchData = async () => {
       try {
         const response = await fetch(
-          "https://backend-umkm-riau.vercel.app/api/dokumentasi"
+          process.env.NEXT_PUBLIC_API_URL + "/api/dokumentasi"
         );
         const result = await response.json();
         if (result.success) {

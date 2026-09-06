@@ -22,7 +22,9 @@ const ModalStep3: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen
     useEffect(() => {
         const fetchPembelianData = async () => {
             try {
-                const response = await axios.get('https://backend-umkm-riau.vercel.app/api/pembelian/CREDIT');
+                const token = localStorage.getItem('token');
+                const config = { headers: { Authorization: `Bearer ${token}` } };
+                const response = await axios.get(process.env.NEXT_PUBLIC_API_URL + '/api/pembelian/CREDIT', config);
                 const pembelianData = response.data.data;
                 setDropdownOptions(pembelianData.map((item: Pembelian) => ({
                     id: item.id,
@@ -42,7 +44,9 @@ const ModalStep3: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen
             if (!selectedId) return;
 
             try {
-                const response = await axios.get(`https://backend-umkm-riau.vercel.app/api/bukti/${selectedId}`);
+                const token = localStorage.getItem('token');
+                const config = { headers: { Authorization: `Bearer ${token}` } };
+                const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/bukti/${selectedId}`, config);
                 const buktiCount = response.data.data.length;
                 const selectedOption = dropdownOptions.find(option => option.id === selectedId);
 
@@ -83,7 +87,7 @@ const ModalStep3: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen
             formDataToSend.append('jumlah', formData.jumlah.toString());
             formDataToSend.append('bukti', formData.bukti);
 
-            await axios.post('https://backend-umkm-riau.vercel.app/api/bukti', formDataToSend, {
+            await axios.post(process.env.NEXT_PUBLIC_API_URL + '/api/bukti', formDataToSend, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
 

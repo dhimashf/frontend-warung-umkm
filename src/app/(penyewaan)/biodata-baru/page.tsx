@@ -141,7 +141,7 @@ const Biodata: React.FC = () => {
     
     try {
       const response = await fetch(
-        "https://backend-umkm-riau.vercel.app/api/biodata",
+        process.env.NEXT_PUBLIC_API_URL + "/api/biodata",
         {
           method: "POST",
           body: formDataToSend,
@@ -155,7 +155,7 @@ const Biodata: React.FC = () => {
   
         // Ambil biodata dari API GET setelah POST berhasil
         const biodataResponse = await fetch(
-          `https://backend-umkm-riau.vercel.app/api/biodata/${id_akun}`
+          `${process.env.NEXT_PUBLIC_API_URL}/api/biodata/${id_akun}`
         );
   
         if (biodataResponse.ok) {

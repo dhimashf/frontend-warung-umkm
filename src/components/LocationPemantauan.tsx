@@ -36,7 +36,10 @@ export function LocationMap() {
         // Fetch data from the API
         const fetchLocations = async () => {
             try {
-                const response = await fetch('https://backend-umkm-riau.vercel.app/api/penyewaan/lokasi');
+                const token = localStorage.getItem('token');
+                const response = await fetch(process.env.NEXT_PUBLIC_API_URL + '/api/penyewaan/lokasi', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
                 const data = await response.json();
                 if (data.success && Array.isArray(data.data)) {
                     const formattedLocations: Location[] = data.data.map((item: ApiLocation) => {
