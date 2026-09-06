@@ -9,9 +9,9 @@ import { PageTransition } from "@/components/animations/PageTransition";
 
 const HomePage: React.FC = () => {
   return (
-    <PageTransition type="fade">
+    <PageTransition type="fade" className="min-h-screen bg-gradient-to-b from-white via-green-50/30 to-gray-50 selection:bg-primary/20">
       <Navbar />
-      <main className="relative px-12 py-24 md:px-40 md:py-32 space-y-32">
+      <main className="relative px-6 py-24 md:px-20 lg:px-40 md:py-32 space-y-32">
         <HomeFrame />
         <ProdukFrame />
         <LayananFrame />

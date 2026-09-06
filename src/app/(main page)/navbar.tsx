@@ -104,22 +104,23 @@ const Navbar: React.FC = () => {
       initial={{ opacity: 0, y: shouldReduceMotion ? 0 : -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: shouldReduceMotion ? 0 : 0.4 }}
-      className="bg-background fixed w-full h-auto z-20 top-0 start-0 border-b"
+      className="bg-white/80 backdrop-blur-md fixed w-full h-auto z-50 top-0 start-0 border-b border-black/5 shadow-sm"
     >
       <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
-        <a href="#" className="flex items-center space-x-3 rtl:space-x-reverse">
-          <span className="self-center text-lg font-black font-outfit whitespace-nowrap text-primary md:text-2xl">
+        <a href="#" className="flex items-center space-x-2 rtl:space-x-reverse group">
+          <div className="w-8 h-8 bg-gradient-to-br from-primary to-[#4ade80] rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-md group-hover:shadow-lg transition-all">W</div>
+          <span className="self-center text-xl font-bold font-outfit whitespace-nowrap text-gray-900 tracking-tight">
             Warung UMKM Riau
           </span>
         </a>
-        <div className="flex md:order-2 space-x-1 md:space-x-4 rtl:space-x-reverse">
+        <div className="flex md:order-2 space-x-2 rtl:space-x-reverse items-center">
           {/* Tampilkan tombol hanya jika belum login */}
           {!isLoggedIn && (
             <>
               <Link href="/login">
                 <button
                   type="button"
-                  className="text-white text-sm bg-primary hover:bg-opacity-50 focus:ring-4 focus:outline-none focus:ring-primary focus:ring-opacity-70 font-medium rounded-lg px-2 py-0 text-center shadow-md hover:shadow-lg md:px-5 md:py-3"
+                  className="text-gray-600 text-sm hover:text-primary font-semibold px-4 py-2 md:px-5 md:py-2.5 transition-colors"
                 >
                   Masuk
                 </button>
@@ -127,7 +128,7 @@ const Navbar: React.FC = () => {
               <Link href="/register">
                 <button
                   type="button"
-                  className="text-primary text-sm bg-foreground hover:bg-primary hover:bg-opacity-40 hover:text-foreground focus:ring-4 focus:outline-none focus:ring-primary focus:ring-opacity-50 font-medium rounded-lg px-2 py-0 text-center shadow-md hover:shadow-lg md:px-5 md:py-3"
+                  className="text-white text-sm bg-primary hover:bg-[#245229] focus:ring-4 focus:outline-none focus:ring-primary/30 font-medium rounded-full px-5 py-2 md:px-6 md:py-2.5 text-center shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all"
                 >
                   Daftar
                 </button>
@@ -239,33 +240,39 @@ const Navbar: React.FC = () => {
           className={`items-center justify-between ${isMenuOpen ? "block" : "hidden"} w-full md:flex md:w-auto md:order-1`}
           id="navbar-sticky"
         >
-          <ul className="flex flex-col p-4 md:p-0 mt-4 font-semibold md:space-x-8 rtl:space-x-reverse md:flex-row md:mt-0 md:bg-background">
+          <ul className="flex flex-col p-4 md:p-0 mt-4 md:space-x-8 rtl:space-x-reverse md:flex-row md:mt-0 md:bg-transparent bg-white/90 md:border-none border border-gray-100 rounded-xl">
             {/* Tambahkan menu Dashboard */}
             {(role == "KEPALA DIVISI" || role == "DIREKTUR" || (role === "PELANGGAN" && biodata)) && (
               <li>
                 <button
                   onClick={handleDashboardRedirect}
-                  className={`block py-2 px-3 rounded md:p-0 ${
+                  className={`block py-2 px-3 md:p-0 relative group transition-colors ${
                     pathname === "/dashboard"
-                      ? "text-primary font-bold"
-                      : "text-gray-900 hover:bg-gray-200 md:hover:bg-transparent md:hover:text-primary"
+                      ? "text-primary font-semibold"
+                      : "text-gray-500 hover:text-gray-900 font-medium"
                   }`}
                 >
                   Dashboard
+                  <span className={`absolute -bottom-1.5 left-0 w-full h-0.5 bg-primary rounded-full transition-transform origin-left duration-300 ${
+                    pathname === "/dashboard" ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
+                  }`}></span>
                 </button>
               </li>
             )}
             {menuItems.map((item) => (
               <li key={item.name}>
-                <a
+                  <a
                   href={item.href}
-                  className={`block py-2 px-3 rounded md:p-0 ${
+                  className={`block py-2 px-3 md:p-0 relative group transition-colors ${
                     pathname === item.href
-                      ? "text-primary font-bold"
-                      : "text-gray-900 hover:bg-gray-200 md:hover:bg-transparent md:hover:text-primary"
+                      ? "text-primary font-semibold"
+                      : "text-gray-500 hover:text-gray-900 font-medium"
                   }`}
                 >
                   {item.name}
+                  <span className={`absolute -bottom-1.5 left-0 w-full h-0.5 bg-primary rounded-full transition-transform origin-left duration-300 ${
+                    pathname === item.href ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
+                  }`}></span>
                 </a>
               </li>
             ))}
