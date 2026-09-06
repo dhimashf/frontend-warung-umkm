@@ -174,9 +174,9 @@ const TabModalPendapatan: React.FC<TabModalPendapatanProps> = ({ isOpen, onClose
     };
 
     const renderTransactions = (type: 'kredit' | 'cash' | 'sewa') => {
-        return transactions[type].map((transaction) => (
+        return transactions[type].map((transaction, index) => (
             <div
-                key={transaction.id}
+                key={`${type}-${transaction.id}-${index}`}
                 className="flex py-2 border-b border-gray-200 last:border-b-0"
             >
                 <span className="w-1/5 text-center bg-slate-300 py-1">{transaction.date}</span>

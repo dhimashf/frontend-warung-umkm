@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { RxCross2 } from "react-icons/rx";
-import { AiOutlineFileImage } from "react-icons/ai";
 import ImageModal from '@/components/ImageModal'; // Import ImageModal
+import React, { useState } from 'react';
+import { AiOutlineFileImage } from "react-icons/ai";
+import { RxCross2 } from "react-icons/rx";
 
 interface PaymentRecord {
   date: string;
@@ -49,7 +49,7 @@ const PaymentHistoryPopup: React.FC<PaymentHistoryPopupProps> = ({ isOpen, onClo
             </thead>
             <tbody>
               {payments.map((payment, index) => (
-                <tr key={index} className="border-b border-gray-100 last:border-b-0">
+                <tr key={`${payment.date}-${payment.amount}-${index}`} className="border-b border-gray-100 last:border-b-0">
                   <td className="py-3 text-gray-800">{payment.date}</td>
                   <td className="py-3 text-center text-gray-800">{formatCurrency(payment.amount)}</td>
                   <td className="py-3">

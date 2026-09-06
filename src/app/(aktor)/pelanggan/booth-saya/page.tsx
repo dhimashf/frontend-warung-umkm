@@ -1,12 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import ImageModal from "@/components/ImageModal";
-import "leaflet/dist/leaflet.css";
-import L from "leaflet";
 import axios from "axios";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { useRouter } from "next/navigation";
-import { MdShield, MdWarning, MdCheckCircle, MdAccessTime, MdCancel } from "react-icons/md";
+import { useEffect, useState } from "react";
+import { MdAccessTime, MdCancel, MdCheckCircle, MdShield, MdWarning } from "react-icons/md";
+
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+});
 
 interface PaymentHistory {
   id: number;
@@ -14,6 +20,8 @@ interface PaymentHistory {
   tanggal: string;
   bukti: string;
   jumlah: number;
+  status_pembayaran?: "MENUNGGU" | "DISETUJUI" | "DITOLAK";
+  catatan_penolakan?: string;
 }
 
 interface BoothData {
@@ -49,12 +57,17 @@ const DEPOSIT_STATUS_CONFIG: Record<string, { label: string; color: string }> = 
 
 const BoothSaya = () => {
   const [data, setData] = useState<BoothData | null>(null);
+  const [customer, setCustomer] = useState({ nama: "-", nik: "-" });
   const [paymentHistory, setPaymentHistory] = useState<PaymentHistory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string>("");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [jumlahPembayaran, setJumlahPembayaran] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  const [isPerpanjangModalOpen, setIsPerpanjangModalOpen] = useState(false);
+  const [perpanjangBulan, setPerpanjangBulan] = useState(1);
+  const [isPerpanjangLoading, setIsPerpanjangLoading] = useState(false);
   const router = useRouter();
 
   const handleUploadBukti = async () => {
@@ -63,9 +76,27 @@ const BoothSaya = () => {
     const token = localStorage.getItem("token");
     const formData = new FormData();
     formData.append("bukti_bayar", uploadFile);
+    
+    const totalTerbayar = paymentHistory
+      .filter((payment) => payment.status_pembayaran === "DISETUJUI")
+      .reduce((sum, p) => sum + Number(p.jumlah), 0);
     // Sewa = durasi * 300000. Total = Sewa + Deposit
-    const totalSewa = (data.durasi * 300000) + (data.deposit || 200000);
-    formData.append("jumlah", totalSewa.toString());
+    const durasi = Number.isSafeInteger(Number(data.durasi)) && Number(data.durasi) > 0
+      ? Number(data.durasi)
+      : 0;
+    const deposit = Number.isFinite(Number(data.deposit)) && Number(data.deposit) >= 0
+      ? Number(data.deposit)
+      : 200000;
+    const totalTagihan = (durasi * 300000) + deposit;
+    const sisaTagihan = Math.max(0, totalTagihan - totalTerbayar);
+    
+    const jumlahBayar = Number(jumlahPembayaran);
+    if (!Number.isFinite(jumlahBayar) || jumlahBayar <= 0 || jumlahBayar > sisaTagihan) {
+      alert(`Nominal harus lebih besar dari Rp 0 dan maksimal Rp ${sisaTagihan.toLocaleString("id-ID")}.`);
+      setIsUploading(false);
+      return;
+    }
+    formData.append("jumlah", jumlahBayar.toString());
 
     try {
       const response = await axios.post(
@@ -85,6 +116,29 @@ const BoothSaya = () => {
     }
   };
 
+  const handlePerpanjang = async () => {
+    if (!data) return;
+    setIsPerpanjangLoading(true);
+    const token = localStorage.getItem("token");
+    try {
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/penyewaan/perpanjang/${data.id_sewa}`,
+        { tambahan_durasi_bulan: perpanjangBulan },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (response.data.success) {
+        alert("Berhasil memperpanjang sewa! Silakan lunasi tagihan tambahan Anda.");
+        window.location.reload();
+      }
+    } catch (error: any) {
+      console.error("Error perpanjang sewa:", error);
+      alert(error.response?.data?.message || "Gagal memperpanjang sewa.");
+    } finally {
+      setIsPerpanjangLoading(false);
+      setIsPerpanjangModalOpen(false);
+    }
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       const biodata = localStorage.getItem("biodata");
@@ -93,7 +147,9 @@ const BoothSaya = () => {
 
       setIsLoading(true);
       try {
-        const { nik } = JSON.parse(biodata);
+        const biodataInfo = JSON.parse(biodata);
+        const { nik } = biodataInfo;
+        setCustomer({ nama: biodataInfo.nama || "-", nik: nik || "-" });
         const response = await axios.get(
           `${process.env.NEXT_PUBLIC_API_URL}/api/penyewaan/nik/${nik}`,
           { headers: { Authorization: `Bearer ${token}` } }
@@ -156,6 +212,18 @@ const BoothSaya = () => {
 
   const dendaDisplay = data?.denda_berjalan || data?.denda || 0;
 
+  const totalTerbayarDisetujui = paymentHistory
+    .filter((payment) => payment.status_pembayaran === "DISETUJUI")
+    .reduce((sum, p) => sum + Number(p.jumlah), 0);
+  const durasi = data && Number.isSafeInteger(Number(data.durasi)) && Number(data.durasi) > 0
+    ? Number(data.durasi)
+    : 0;
+  const deposit = data && Number.isFinite(Number(data.deposit)) && Number(data.deposit) >= 0
+    ? Number(data.deposit)
+    : 200000;
+  const totalTagihan = data ? (durasi * 300000) + deposit : 0;
+  const sisaTagihan = Math.max(0, totalTagihan - totalTerbayarDisetujui);
+
   if (isLoading) {
     return (
       <div className="fixed mt-12 ml-64 inset-0 z-0 flex items-center justify-center">
@@ -203,6 +271,16 @@ const BoothSaya = () => {
                 <p className="text-xl font-bold text-primary">Rp {((data.durasi * 300000) + (data.deposit || 200000)).toLocaleString("id-ID")}</p>
                 <p className="text-xs text-gray-500 mt-1">(Sewa {data.durasi} bulan + Deposit Jaminan)</p>
               </div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nominal yang dibayar</label>
+              <input
+                type="number"
+                min="1"
+                max={totalTagihan}
+                value={jumlahPembayaran}
+                onChange={(e) => setJumlahPembayaran(e.target.value)}
+                placeholder="Masukkan nominal sesuai bukti transfer"
+                className="w-full border p-2 rounded mb-3 text-sm bg-white"
+              />
               <input 
                 type="file" 
                 accept="image/*,application/pdf"
@@ -266,12 +344,22 @@ const BoothSaya = () => {
               <span>{statusInfo.label}</span>
             </div>
             {(data.status === 'DISEWA' || data.status === 'INSPEKSI' || data.status === 'SELESAI') && (
-              <button 
-                onClick={() => window.print()}
-                className="bg-gray-800 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-gray-700 flex items-center gap-2"
-              >
-                🖨️ Cetak Invoice
-              </button>
+              <div className="flex gap-2">
+                {data.status === 'DISEWA' && (
+                  <button 
+                    onClick={() => setIsPerpanjangModalOpen(true)}
+                    className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-blue-700 font-semibold"
+                  >
+                    Perpanjang Sewa
+                  </button>
+                )}
+                <button 
+                  onClick={() => window.print()}
+                  className="bg-gray-800 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-gray-700 flex items-center gap-2"
+                >
+                  🖨️ Cetak Invoice
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -292,6 +380,41 @@ const BoothSaya = () => {
             </div>
           ))}
         </div>
+
+        {/* Form Pelunasan (Jika ada Sisa Tagihan) */}
+        {(sisaTagihan > 0 && (data.status === 'DISEWA' || data.status === 'INSPEKSI' || data.status === 'SELESAI')) && (
+          <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-5 mb-6">
+            <h3 className="font-bold text-yellow-800 mb-2">Tagihan Belum Lunas: Rp {sisaTagihan.toLocaleString("id-ID")}</h3>
+            <p className="text-sm text-yellow-700 mb-4">
+              Anda memiliki sisa tagihan (misalnya dari perpanjangan sewa) yang harus dilunasi. 
+              Silakan unggah bukti transfer sebesar <strong>Rp {sisaTagihan.toLocaleString("id-ID")}</strong>.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <input
+                type="number"
+                min="1"
+                max={sisaTagihan}
+                value={jumlahPembayaran}
+                onChange={(e) => setJumlahPembayaran(e.target.value)}
+                placeholder="Nominal pembayaran"
+                className="sm:w-52 border p-2 rounded text-sm bg-white"
+              />
+              <input 
+                type="file" 
+                accept="image/*,application/pdf"
+                onChange={(e) => e.target.files && setUploadFile(e.target.files[0])}
+                className="flex-1 border p-2 rounded text-sm bg-white"
+              />
+              <button
+                onClick={handleUploadBukti}
+                disabled={!uploadFile || isUploading}
+                className={`py-2 px-4 rounded-lg text-white font-medium whitespace-nowrap ${!uploadFile || isUploading ? 'bg-gray-400 cursor-not-allowed' : 'bg-primary hover:opacity-80'}`}
+              >
+                {isUploading ? 'Mengunggah...' : 'Unggah Bukti Pelunasan'}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Deposit & Denda */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
@@ -351,17 +474,21 @@ const BoothSaya = () => {
                 <tr className="bg-gray-100">
                   <th className="border border-gray-300 px-4 py-2 text-sm">Tanggal</th>
                   <th className="border border-gray-300 px-4 py-2 text-sm">Jumlah</th>
+                  <th className="border border-gray-300 px-4 py-2 text-sm">Status</th>
                   <th className="border border-gray-300 px-4 py-2 text-sm">Bukti</th>
                 </tr>
               </thead>
               <tbody>
-                {paymentHistory.map((payment) => (
-                  <tr key={payment.id} className="hover:bg-gray-50">
+                {paymentHistory.map((payment, index) => (
+                  <tr key={`${payment.id}-${payment.tanggal}-${payment.jumlah}-${index}`} className="hover:bg-gray-50">
                     <td className="border border-gray-300 px-4 py-2 text-sm">
                       {new Date(payment.tanggal).toLocaleDateString("id-ID")}
                     </td>
                     <td className="border border-gray-300 px-4 py-2 text-sm font-medium">
                       Rp {payment.jumlah.toLocaleString("id-ID")}
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2 text-sm">
+                      {payment.status_pembayaran === "DISETUJUI" ? "Disetujui" : payment.status_pembayaran === "DITOLAK" ? "Ditolak" : "Menunggu verifikasi"}
                     </td>
                     <td className="border border-gray-300 px-4 py-2 text-sm">
                       <button
@@ -380,6 +507,103 @@ const BoothSaya = () => {
       </div>
 
       <ImageModal isOpen={isModalOpen} imageSrc={selectedImage} onClose={() => { setIsModalOpen(false); setSelectedImage(""); }} />
+
+      <section className="print-invoice" aria-label="Invoice Warung UMKM">
+        <div className="invoice-header">
+          <div>
+            <p className="invoice-brand">WARUNG UMKM</p>
+            <p className="invoice-subtitle">Riau</p>
+          </div>
+          <div className="invoice-meta">
+            <p className="invoice-title">INVOICE SEWA</p>
+            <p>No. Invoice: INV-{data.id_sewa}</p>
+            <p>Tanggal cetak: {new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" })}</p>
+          </div>
+        </div>
+
+        <div className="invoice-parties">
+          <div>
+            <p className="invoice-label">DITERBITKAN UNTUK</p>
+            <p className="invoice-value">{customer.nama}</p>
+            <p>NIK: {customer.nik}</p>
+          </div>
+          <div>
+            <p className="invoice-label">STATUS TRANSAKSI</p>
+            <p className="invoice-status">{statusInfo.label}</p>
+            <p>Persetujuan pembayaran tercatat</p>
+          </div>
+        </div>
+
+        <table className="invoice-table">
+          <thead>
+            <tr><th>Deskripsi</th><th>Detail</th><th>Jumlah</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Sewa booth</td><td>{durasi} bulan x Rp 300.000</td><td>{`Rp ${(durasi * 300000).toLocaleString("id-ID")}`}</td></tr>
+            <tr><td>Deposit jaminan</td><td>{depositInfo.label}</td><td>{`Rp ${deposit.toLocaleString("id-ID")}`}</td></tr>
+            {dendaDisplay > 0 && <tr><td>Denda keterlambatan</td><td>Biaya tambahan</td><td>{`Rp ${Number(dendaDisplay).toLocaleString("id-ID")}`}</td></tr>}
+          </tbody>
+          <tfoot>
+            <tr><td colSpan={2}>TOTAL TAGIHAN</td><td>{`Rp ${totalTagihan.toLocaleString("id-ID")}`}</td></tr>
+            <tr><td colSpan={2}>TOTAL DIBAYAR (DISETUJUI)</td><td>{`Rp ${totalTerbayarDisetujui.toLocaleString("id-ID")}`}</td></tr>
+            <tr className="invoice-total"><td colSpan={2}>SISA TAGIHAN</td><td>{`Rp ${sisaTagihan.toLocaleString("id-ID")}`}</td></tr>
+          </tfoot>
+        </table>
+
+        <div className="invoice-details">
+          <div><span>Periode sewa</span><strong>{data.mulai_sewa ? new Date(data.mulai_sewa).toLocaleDateString("id-ID") : "-"} - {data.akhir_sewa ? new Date(data.akhir_sewa).toLocaleDateString("id-ID") : "-"}</strong></div>
+          <div><span>ID Booth</span><strong>{data.booth_id_booth || "-"}</strong></div>
+          <div><span>Lokasi</span><strong>{data.lokasi || "-"}</strong></div>
+        </div>
+        <p className="invoice-note">Invoice ini dicetak sebagai bukti transaksi sewa Warung UMKM.</p>
+      </section>
+
+      {/* Modal Perpanjang Sewa */}
+      {isPerpanjangModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-xl w-full max-w-md shadow-2xl mx-4">
+            <h2 className="text-xl font-bold text-gray-800 mb-4">Perpanjang Sewa</h2>
+            <p className="text-sm text-gray-600 mb-4">
+              Biaya perpanjangan adalah <strong>Rp 300.000 / bulan</strong>.
+              Tanggal berakhir sewa Anda saat ini adalah <strong>{new Date(data.akhir_sewa).toLocaleDateString("id-ID")}</strong>.
+            </p>
+            
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Durasi Tambahan (Bulan)</label>
+            <div className="flex items-center gap-4 mb-6">
+              <button 
+                onClick={() => setPerpanjangBulan(Math.max(1, perpanjangBulan - 1))}
+                className="bg-gray-200 w-10 h-10 rounded-lg flex items-center justify-center font-bold hover:bg-gray-300"
+              >-</button>
+              <span className="text-xl font-bold w-8 text-center">{perpanjangBulan}</span>
+              <button 
+                onClick={() => setPerpanjangBulan(Math.min(12, perpanjangBulan + 1))}
+                className="bg-gray-200 w-10 h-10 rounded-lg flex items-center justify-center font-bold hover:bg-gray-300"
+              >+</button>
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg mb-6">
+              <p className="text-sm text-blue-800">Total Tagihan Tambahan:</p>
+              <p className="text-lg font-bold text-blue-900">Rp {(perpanjangBulan * 300000).toLocaleString("id-ID")}</p>
+            </div>
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setIsPerpanjangModalOpen(false)}
+                className="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handlePerpanjang}
+                disabled={isPerpanjangLoading}
+                className="px-4 py-2 bg-primary text-white hover:opacity-90 rounded-lg font-medium transition disabled:bg-gray-400"
+              >
+                {isPerpanjangLoading ? 'Memproses...' : 'Konfirmasi Perpanjang'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

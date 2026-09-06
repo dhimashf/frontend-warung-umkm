@@ -12,9 +12,12 @@ import ImageModal from "@/components/ImageModal";
 import axios from "axios";
 
 interface Pembayaran {
+  id: number;
   tanggal: string;
   jumlah: number;
   bukti: string;
+  status_pembayaran: "MENUNGGU" | "DISETUJUI" | "DITOLAK";
+  catatan_penolakan?: string;
 }
 
 interface PenyewaanDetail {
@@ -64,6 +67,7 @@ const SewaDetail = () => {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string>("");
+  const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -82,15 +86,21 @@ const SewaDetail = () => {
           const resPembayaran = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/sewa/${penyewaanData.id_sewa}`, config);
           if (resPembayaran.data.success && resPembayaran.data.data.length > 0) {
             pembayaranData = resPembayaran.data.data.map((pay: any) => ({
+              id: Number(pay.id),
               tanggal: new Date(pay.tanggal).toLocaleDateString("id-ID"),
-              jumlah: pay.jumlah,
+              jumlah: Number(pay.jumlah),
               bukti: pay.bukti,
+              status_pembayaran: pay.status_pembayaran || "MENUNGGU",
+              catatan_penolakan: pay.catatan_penolakan,
             }));
           }
         } catch { pembayaranData = null; }
 
-        const jumlahDibayar = pembayaranData ? pembayaranData.reduce((a, c) => a + c.jumlah, 0) : 0;
+        const jumlahDibayar = pembayaranData
+          ? pembayaranData.filter((payment) => payment.status_pembayaran === "DISETUJUI").reduce((a, c) => a + c.jumlah, 0)
+          : 0;
         const harga = penyewaanData.durasi * 300000;
+        const totalTagihan = harga + Number(penyewaanData.deposit || 200000);
 
         setDetail({
           id_sewa: penyewaanData.id_sewa.toString(),
@@ -110,7 +120,7 @@ const SewaDetail = () => {
           denda_berjalan: penyewaanData.denda_berjalan || 0,
           pembayaran: pembayaranData,
           jumlah_dibayar: jumlahDibayar,
-          sisa: harga - jumlahDibayar,
+          sisa: totalTagihan - jumlahDibayar,
           bukti_bayar: penyewaanData.bukti_bayar,
         });
       } catch (e) {
@@ -154,6 +164,26 @@ const SewaDetail = () => {
 
   const fmt = (d: string) => d ? new Date(d).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" }) : "-";
   const fmtRp = (n: number) => `Rp ${n.toLocaleString("id-ID")}`;
+
+  const handlePaymentDecision = async (paymentId: number, decision: "setujui" | "tolak") => {
+    const token = localStorage.getItem("token");
+    const catatan = decision === "tolak" ? window.prompt("Alasan penolakan pembayaran:") : "";
+    if (decision === "tolak" && catatan === null) return;
+
+    setIsPaymentProcessing(true);
+    try {
+      await axios.put(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/sewa/${paymentId}/${decision}`,
+        decision === "tolak" ? { catatan } : {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      window.location.reload();
+    } catch (error: any) {
+      alert(error.response?.data?.message || "Gagal memproses pembayaran.");
+    } finally {
+      setIsPaymentProcessing(false);
+    }
+  };
 
   return (
     <div className="p-6 pb-16 space-y-6 bg-gray-50 min-h-screen">
@@ -328,11 +358,12 @@ const SewaDetail = () => {
                       <th className="py-3 px-6 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Tanggal</th>
                       <th className="py-3 px-6 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Jumlah</th>
                       <th className="py-3 px-6 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Bukti</th>
+                      <th className="py-3 px-6 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Verifikasi</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
                     {detail.pembayaran.map((pay, index) => (
-                      <tr key={index} className="hover:bg-gray-50 transition-colors">
+                      <tr key={`${pay.id}-${pay.tanggal}-${index}`} className="hover:bg-gray-50 transition-colors">
                         <td className="py-4 px-6">
                           <span className="w-6 h-6 rounded-full bg-primary bg-opacity-10 text-primary text-xs font-bold flex items-center justify-center">
                             {index + 1}
@@ -349,6 +380,30 @@ const SewaDetail = () => {
                           >
                             Lihat Bukti
                           </button>
+                        </td>
+                        <td className="py-4 px-6">
+                          {pay.status_pembayaran === "MENUNGGU" ? (
+                            <div className="flex gap-2">
+                              <button
+                                disabled={isPaymentProcessing}
+                                onClick={() => handlePaymentDecision(pay.id, "setujui")}
+                                className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white disabled:bg-gray-400"
+                              >
+                                ACC
+                              </button>
+                              <button
+                                disabled={isPaymentProcessing}
+                                onClick={() => handlePaymentDecision(pay.id, "tolak")}
+                                className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white disabled:bg-gray-400"
+                              >
+                                Tolak
+                              </button>
+                            </div>
+                          ) : (
+                            <span className={pay.status_pembayaran === "DISETUJUI" ? "text-emerald-700" : "text-red-700"}>
+                              {pay.status_pembayaran === "DISETUJUI" ? "Disetujui" : "Ditolak"}
+                            </span>
+                          )}
                         </td>
                       </tr>
                     ))}

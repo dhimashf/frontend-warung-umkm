@@ -30,6 +30,10 @@ export default function DashboardKepalaDivisi() {
   const [totalPendapatan, setTotalPendapatan] = useState(0)
   const [dendaAktif, setDendaAktif] = useState(0)
   const [isTabModalPendapatanOpen, setIsTabModalPendapatanOpen] = useState(false);
+  const [focusBoothId, setFocusBoothId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'monitoring' | 'arsip'>('monitoring');
+  const [archiveData, setArchiveData] = useState<Booth[]>([]);
+  const [isLoadingArchive, setIsLoadingArchive] = useState(false);
 
   const fetchBiodataName = async (biodata_nik: string) => {
     try {
@@ -57,6 +61,34 @@ export default function DashboardKepalaDivisi() {
 
   const openTabModal = () => setIsTabModalPendapatanOpen(true);
   const closeTabModal = () => setIsTabModalPendapatanOpen(false);
+
+  const fetchArchiveData = async () => {
+    if (archiveData.length > 0) return; // Don't refetch if already loaded
+    setIsLoadingArchive(true);
+    try {
+      const token = localStorage.getItem("token");
+      const resSewa = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/penyewaan`, { headers: { Authorization: `Bearer ${token}` } });
+      if (resSewa.data.success && resSewa.data.data) {
+        const archived = resSewa.data.data.filter((b: Booth) => b.status === 'SELESAI' || b.status === 'DITOLAK');
+        const withNames = await Promise.all(
+          archived.map(async (booth: Booth) => {
+            const name = await fetchBiodataName(booth.biodata_nik);
+            return { ...booth, penyewa_nama: name || booth.biodata_nik };
+          })
+        );
+        setArchiveData(withNames);
+      }
+    } catch (error) {
+      console.error('Error fetching archive data:', error);
+    } finally {
+      setIsLoadingArchive(false);
+    }
+  };
+
+  const handleTabChange = (tab: 'monitoring' | 'arsip') => {
+    setActiveTab(tab);
+    if (tab === 'arsip') fetchArchiveData();
+  };
 
   const handleDetailClick = async (booth: Booth) => {
     setSelectedBooth(null);
@@ -123,7 +155,13 @@ export default function DashboardKepalaDivisi() {
         // Fetch Booth Disewa
         const resSewa = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/penyewaan`, { headers: { Authorization: `Bearer ${token}` } });
         if (resSewa.data.success && resSewa.data.data) {
-          const activeRentals = resSewa.data.data.filter((b: Booth) => b.status === 'DISEWA' || b.status === 'INSPEKSI');
+          const activeRentals = Array.from(
+            new Map(
+              resSewa.data.data
+                .filter((b: Booth) => b.status === 'DISEWA' || b.status === 'INSPEKSI')
+                .map((booth: Booth) => [booth.id_sewa, booth])
+            ).values()
+          );
           const boothsWithDetails = await Promise.all(
             activeRentals.map(async (booth: Booth) => {
               const name = await fetchBiodataName(booth.biodata_nik);
@@ -173,64 +211,157 @@ export default function DashboardKepalaDivisi() {
         isOpen={isTabModalPendapatanOpen}
         onClose={closeTabModal} />
       
-      <LocationPemantauan />
+      <LocationPemantauan focusBoothId={focusBoothId} />
       
       <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 mt-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className='font-bold text-gray-800 text-lg'>Monitoring Aktif Penyewa Booth</h2>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
+          <h2 className='font-bold text-gray-800 text-lg'>Data Penyewaan Booth</h2>
+          <div className="flex gap-2">
+            <button
+              onClick={() => handleTabChange('monitoring')}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                activeTab === 'monitoring'
+                  ? 'bg-primary text-white shadow'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              Monitoring Aktif
+            </button>
+            <button
+              onClick={() => handleTabChange('arsip')}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                activeTab === 'arsip'
+                  ? 'bg-gray-700 text-white shadow'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              🗄️ Arsip Penyewaan
+            </button>
+          </div>
         </div>
-        
-        <div className="hidden md:block overflow-x-auto">
-          <table className="min-w-full table-auto text-sm text-left">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-3 border-b text-gray-600 font-semibold">ID Booth</th>
-                <th className="px-4 py-3 border-b text-gray-600 font-semibold">Status</th>
-                <th className="px-4 py-3 border-b text-gray-600 font-semibold">Penyewa</th>
-                <th className="px-4 py-3 border-b text-gray-600 font-semibold">Lokasi</th>
-                <th className="px-4 py-3 border-b text-gray-600 font-semibold text-center">Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {boothData.length === 0 ? (
-                <tr><td colSpan={5} className="text-center py-4 text-gray-500">Tidak ada booth aktif.</td></tr>
-              ) : boothData.map((booth) => (
-                <tr key={booth.id_sewa} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 border-b font-medium text-gray-800">{booth.booth_id_booth}</td>
-                  <td className="px-4 py-3 border-b">
-                    <span className={`px-2 py-1 text-xs rounded-full font-bold ${booth.status === 'INSPEKSI' ? 'bg-purple-100 text-purple-700' : 'bg-green-100 text-green-700'}`}>
-                      {booth.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 border-b text-gray-700">{booth.penyewa_nama || booth.biodata_nik}</td>
-                  <td className="px-4 py-3 border-b text-gray-700">{booth.kecamatan || 'Unknown'}</td>
-                  <td className="px-4 py-3 border-b text-center">
-                    <button
-                      className="font-semibold text-primary bg-primary bg-opacity-10 py-1.5 px-3 rounded hover:bg-opacity-20 transition"
-                      onClick={() => handleDetailClick(booth)}
+
+        {/* Tab: Monitoring Aktif */}
+        {activeTab === 'monitoring' && (
+          <>
+            <div className="hidden md:block overflow-x-auto">
+              <table className="min-w-full table-auto text-sm text-left">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 border-b text-gray-600 font-semibold">ID Booth</th>
+                    <th className="px-4 py-3 border-b text-gray-600 font-semibold">Status</th>
+                    <th className="px-4 py-3 border-b text-gray-600 font-semibold">Penyewa</th>
+                    <th className="px-4 py-3 border-b text-gray-600 font-semibold">Lokasi</th>
+                    <th className="px-4 py-3 border-b text-gray-600 font-semibold text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {boothData.length === 0 ? (
+                    <tr><td colSpan={5} className="text-center py-4 text-gray-500">Tidak ada booth aktif.</td></tr>
+                  ) : boothData.map((booth) => (
+                    <tr 
+                      key={booth.id_sewa} 
+                      className={`hover:bg-blue-50 cursor-pointer transition-colors ${focusBoothId === booth.booth_id_booth ? 'bg-blue-50 border-l-4 border-primary' : ''}`}
+                      onClick={() => setFocusBoothId(booth.booth_id_booth)}
                     >
-                      Detail Sewa
-                    </button>
-                  </td>
-                </tr>
+                      <td className="px-4 py-3 border-b font-medium text-gray-800">{booth.booth_id_booth}</td>
+                      <td className="px-4 py-3 border-b">
+                        <span className={`px-2 py-1 text-xs rounded-full font-bold ${booth.status === 'INSPEKSI' ? 'bg-purple-100 text-purple-700' : 'bg-green-100 text-green-700'}`}>
+                          {booth.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 border-b text-gray-700">{booth.penyewa_nama || booth.biodata_nik}</td>
+                      <td className="px-4 py-3 border-b text-gray-700">{booth.kecamatan || 'Unknown'}</td>
+                      <td className="px-4 py-3 border-b text-center">
+                        <button
+                          className="font-semibold text-primary bg-primary bg-opacity-10 py-1.5 px-3 rounded hover:bg-opacity-20 transition"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDetailClick(booth);
+                          }}
+                        >
+                          Detail Sewa
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="md:hidden space-y-4">
+              {boothData.map((booth) => (
+                <PemantauanBoothCard
+                  key={booth.id_sewa}
+                  booth={{
+                    id: booth.booth_id_booth || 'Unknown',
+                    penyewa: booth.penyewa_nama || 'Unknown',
+                    lokasi: booth.kecamatan || 'Unknown',
+                  }}
+                  onDetailClick={() => handleDetailClick(booth)}
+                />
               ))}
-            </tbody>
-          </table>
-        </div>
-        
-        <div className="md:hidden space-y-4">
-          {boothData.map((booth) => (
-            <PemantauanBoothCard
-              key={booth.id_sewa}
-              booth={{
-                id: booth.booth_id_booth || 'Unknown',
-                penyewa: booth.penyewa_nama || 'Unknown',
-                lokasi: booth.kecamatan || 'Unknown',
-              }}
-              onDetailClick={() => handleDetailClick(booth)}
-            />
-          ))}
-        </div>
+            </div>
+          </>
+        )}
+
+        {/* Tab: Arsip Penyewaan */}
+        {activeTab === 'arsip' && (
+          <div className="overflow-x-auto">
+            {isLoadingArchive ? (
+              <div className="py-10 text-center text-gray-500">Memuat arsip...</div>
+            ) : (
+              <table className="min-w-full table-auto text-sm text-left">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 border-b text-gray-600 font-semibold">ID Sewa</th>
+                    <th className="px-4 py-3 border-b text-gray-600 font-semibold">ID Booth</th>
+                    <th className="px-4 py-3 border-b text-gray-600 font-semibold">Status</th>
+                    <th className="px-4 py-3 border-b text-gray-600 font-semibold">Penyewa (NIK)</th>
+                    <th className="px-4 py-3 border-b text-gray-600 font-semibold">Mulai Sewa</th>
+                    <th className="px-4 py-3 border-b text-gray-600 font-semibold">Akhir Sewa</th>
+                    <th className="px-4 py-3 border-b text-gray-600 font-semibold">Durasi</th>
+                    <th className="px-4 py-3 border-b text-gray-600 font-semibold">Denda</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {archiveData.length === 0 ? (
+                    <tr><td colSpan={8} className="text-center py-8 text-gray-400">Belum ada arsip penyewaan.</td></tr>
+                  ) : archiveData.map((booth) => (
+                    <tr key={booth.id_sewa} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 border-b text-gray-700">#{booth.id_sewa}</td>
+                      <td className="px-4 py-3 border-b font-medium text-gray-800">{booth.booth_id_booth || '-'}</td>
+                      <td className="px-4 py-3 border-b">
+                        <span className={`px-2 py-1 text-xs rounded-full font-bold ${
+                          booth.status === 'SELESAI'
+                            ? 'bg-gray-100 text-gray-600'
+                            : 'bg-red-100 text-red-600'
+                        }`}>
+                          {booth.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 border-b text-gray-700">
+                        <div>{booth.penyewa_nama || '-'}</div>
+                        <div className="text-xs text-gray-400">{booth.biodata_nik}</div>
+                      </td>
+                      <td className="px-4 py-3 border-b text-gray-600">
+                        {booth.mulai_sewa ? new Date(booth.mulai_sewa).toLocaleDateString('id-ID') : '-'}
+                      </td>
+                      <td className="px-4 py-3 border-b text-gray-600">
+                        {booth.akhir_sewa ? new Date(booth.akhir_sewa).toLocaleDateString('id-ID') : '-'}
+                      </td>
+                      <td className="px-4 py-3 border-b text-gray-600">{booth.durasi} bln</td>
+                      <td className="px-4 py-3 border-b">
+                        <span className={booth.denda && booth.denda > 0 ? 'text-red-600 font-semibold' : 'text-gray-500'}>
+                          {booth.denda && booth.denda > 0 ? `Rp ${Number(booth.denda).toLocaleString('id-ID')}` : '-'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
       </div>
 
       {selectedBooth && (

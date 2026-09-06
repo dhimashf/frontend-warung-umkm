@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FiHome, FiPackage, FiBook } from "react-icons/fi";
+import { FiPackage, FiBook } from "react-icons/fi";
 import { MdOutlineSpaceDashboard,  } from "react-icons/md";
 import { BsPersonFillDown, BsShop } from "react-icons/bs";
 import { PiShippingContainerDuotone } from "react-icons/pi";
@@ -18,7 +18,6 @@ const Sidebar: React.FC<SidebarProps> = ({ role, isOpen, toggleSidebar }) => {
   const rolePrefix = `/${role}`;
 
   const menus = [
-    { label: "Home", link: "/", icon: FiHome, roles: ["direktur", "kepala-divisi", "pelanggan"] },
     { label: "Dashboard", link: `${rolePrefix}`, icon: MdOutlineSpaceDashboard, roles: ["direktur", "kepala-divisi", "pelanggan"] },
     { label: "Pengelolaan Produk", link: `${rolePrefix}/pengelolaan-produk`, icon: FiPackage, roles: ["kepala-divisi"] },
     { label: "Data Transaksi", link: `${rolePrefix}/data-transaksi`, icon: FiBook, roles: ["kepala-divisi"] },
@@ -53,7 +52,7 @@ const Sidebar: React.FC<SidebarProps> = ({ role, isOpen, toggleSidebar }) => {
     >
       <div className="h-full px-3 pb-4 overflow-y-auto">
         <div className="px-2 pt-8 pb-10 font-black text-center text-primary">
-          <Link href="/" className="text-primary text-2xl">
+          <Link href={rolePrefix} className="text-primary text-2xl">
             Warung UMKM Riau
           </Link>
         </div>

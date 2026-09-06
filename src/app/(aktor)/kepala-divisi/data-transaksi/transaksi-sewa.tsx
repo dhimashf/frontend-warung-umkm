@@ -3,8 +3,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
-import { BsJournalPlus } from "react-icons/bs";
-import AddBayarSewaModal from "@/components/TambahPembayaranSewaModal"; // Impor komponen modal
 
 interface PenyewaanData {
   biodata_nik: string;
@@ -18,7 +16,6 @@ const RiwayatPenyewaan = () => {
   const router = useRouter();
   const [dataPenyewaan, setDataPenyewaan] = useState<PenyewaanData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false); // State untuk modal
 
   // Mengambil data penyewaan dan nama penyewa
   useEffect(() => {
@@ -33,8 +30,12 @@ const RiwayatPenyewaan = () => {
         const penyewaanData = penyewaanResponse.data.data;
   
         // Filter data dengan booth_id_booth yang tidak kosong atau null
-        const filteredData = penyewaanData.filter(
-          (item: PenyewaanData) => item.booth_id_booth && item.booth_id_booth.trim() !== ""
+        const filteredData = Array.from(
+          new Map(
+            penyewaanData
+              .filter((item: PenyewaanData) => item.booth_id_booth && item.booth_id_booth.trim() !== "")
+              .map((item: PenyewaanData) => [item.id_sewa, item])
+          ).values()
         );
   
         const updatedData = await Promise.all(
@@ -70,20 +71,6 @@ const RiwayatPenyewaan = () => {
 
   return (
     <div className="relative">
-      <button
-        onClick={() => setIsModalOpen(true)} // Buka modal saat tombol diklik
-        className="absolute right-1 -top-16 bg-primary hover:bg-opacity-50 text-black hover:text-black px-6 sm:px-4 py-2 rounded-lg flex items-center"
-      >
-        <BsJournalPlus className="sm:mr-2 mr-0 text-white text-lg sm:text-xl" />
-        <span className="text-white hidden md:inline"> Pembayaran Sewa</span>
-      </button>
-
-      {/* Modal Pembayaran Sewa */}
-      <AddBayarSewaModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)} // Tutup modal
-      />
-
       <div className="overflow-x-auto shadow-2xl shadow-primary rounded-lg">
         <table className="min-w-full text-sm text-left text-gray-500">
           <thead className="text-xs text-gray-700 uppercase border-b bg-gray-50">
@@ -97,7 +84,7 @@ const RiwayatPenyewaan = () => {
           </thead>
           <tbody>
             {dataPenyewaan.map((item, index) => (
-              <tr key={index} className="bg-white border-b hover:bg-gray-50">
+              <tr key={`sewa-${item.id_sewa}-${index}`} className="bg-white border-b hover:bg-gray-50">
                 <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
                   {item.id_sewa}
                 </td>

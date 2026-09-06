@@ -183,7 +183,7 @@ const TransaksiCash: React.FC = () => {
             {data.map((item) => {
               const { buktiError, produkError } = errorStatus[item.id] || {};
               return (
-                <tr key={item.id} className="bg-white border-b hover:bg-gray-50">
+                <tr key={`cash-${item.id}-${data.indexOf(item)}`} className="bg-white border-b hover:bg-gray-50">
                   <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{item.tanggal_transaksi}</td>
                   <td className="px-6 py-4 text-center">{item.nama}</td>
                   <td className="px-6 py-4 text-center">{item.jumlah_produk}</td>

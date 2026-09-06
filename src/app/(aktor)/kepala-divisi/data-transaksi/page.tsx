@@ -1,6 +1,5 @@
 "use client";
 import React, { useState } from "react";
-import TambahPembayaranSewa from "@/components/TambahPembayaranSewaModal";
 import TabLayout2 from "@/components/TabLayout2";
 import dynamic from "next/dynamic";
 // import { FaPlus } from "react-icons/fa";
@@ -11,7 +10,6 @@ const TransaksiCash = dynamic(() => import("./transaksi-cash"));
 const TransaksiKredit = dynamic(() => import("./transaksi-kredit"));
 
 const DataTransaksi: React.FC = () => {
-  const [showModal, setShowModal] = useState(false);
   const [showOptionModal, setShowOptionModal] = useState(false);
   const [selectedOption, setSelectedOption] = useState<"Cash" | "Kredit" | "Pembayaran Kredit" | null>(null);
 
@@ -145,10 +143,6 @@ const DataTransaksi: React.FC = () => {
       {selectedOption === "Kredit" && <div>Form untuk Kredit</div>}
       {selectedOption === "Pembayaran Kredit" && <div>Form untuk Pembayaran Kredit</div>}
 
-      <TambahPembayaranSewa
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-      />
     </div>
   );
 };

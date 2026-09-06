@@ -24,9 +24,14 @@ L.Icon.Default.mergeOptions({
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-export function LocationMap() {
+export interface LocationMapProps {
+    focusBoothId?: string | null;
+}
+
+export function LocationMap({ focusBoothId }: LocationMapProps) {
     const mapRef = useRef<HTMLDivElement>(null);
     const mapInstanceRef = useRef<L.Map | null>(null);
+    const markersRef = useRef<{ [key: string]: L.Marker }>({});
     const [locations, setLocations] = useState<Location[] | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -86,6 +91,7 @@ export function LocationMap() {
         <p class="text-sm text-gray-600">Penyewa: ${location.name}</p>
     
       `);
+            markersRef.current[location.boothId] = marker;
         });
 
         // Resize map when window is resized
@@ -99,9 +105,21 @@ export function LocationMap() {
         return () => {
             // Clean up map instance and event listeners
             map.remove();
+            markersRef.current = {};
             window.removeEventListener('resize', handleResize);
         };
     }, [locations]);
+
+    // Handle focusing on a specific booth
+    useEffect(() => {
+        if (focusBoothId && mapInstanceRef.current && markersRef.current[focusBoothId]) {
+            const marker = markersRef.current[focusBoothId];
+            const latLng = marker.getLatLng();
+            mapInstanceRef.current.setView(latLng, 16, { animate: true, duration: 1 });
+            // Small delay to allow map to pan before opening popup
+            setTimeout(() => marker.openPopup(), 250);
+        }
+    }, [focusBoothId, locations]);
 
     return (
         <div className="w-full bg-white rounded-lg shadow-md">

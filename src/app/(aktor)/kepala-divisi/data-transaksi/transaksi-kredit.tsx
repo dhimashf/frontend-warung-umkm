@@ -195,7 +195,7 @@ const TransaksiKredit: React.FC = () => {
           </thead>
           <tbody>
             {transaksi.map((item, index) => (
-              <tr key={index} className="bg-white border-b hover:bg-gray-50">
+              <tr key={`kredit-${item.id}-${index}`} className="bg-white border-b hover:bg-gray-50">
                 <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
                   {item.tanggal_transaksi}
                 </td>

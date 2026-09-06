@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { MdCheckCircle, MdWarning, MdError, MdAddCircle, MdCalendarToday, MdSearch } from "react-icons/md";
+import { MdCheckCircle, MdWarning, MdAddCircle, MdCalendarToday, MdSearch, MdStorefront } from "react-icons/md";
 import ModalRiwayatKerusakanBooth from "@/components/ModalRiwayatKerusakanBooth";
 import ModalTambahRiwayatKerusakanBooth from "@/components/ModalTambahRiwayatKerusakan";
 import { useModal } from "./ModalContext";
@@ -26,7 +26,7 @@ export default function BoothCard({
 }: BoothCardProps) {
     const [penyewa, setPenyewa] = useState<string | null>(initialPenyewa);
     const [status, setStatus] = useState(initialStatus.toLowerCase());
-    const [newRiwayat, setNewRiwayat] = useState({ tanggal: "", deskripsi: "" });
+    const [newRiwayat, setNewRiwayat] = useState({ tanggal: "", deskripsi: "", bukti: null as File | null });
 
     // Modals
     const [isModalInspeksi, setIsModalInspeksi] = useState(false);
@@ -66,6 +66,42 @@ export default function BoothCard({
         } finally {
             setIsLoadingRiwayat(false);
             setIsModalRiwayatKerusakanOpen(true);
+        }
+    };
+
+    const submitTambahRiwayat = async () => {
+        if (!newRiwayat.tanggal || !newRiwayat.deskripsi || !newRiwayat.bukti) {
+            showError("Tanggal, deskripsi, dan bukti kerusakan wajib diisi.");
+            return;
+        }
+
+        try {
+            const formData = new FormData();
+            formData.append("id_booth", id);
+            formData.append("tanggal_kerusakan", newRiwayat.tanggal);
+            formData.append("riwayat_kerusakan", newRiwayat.deskripsi);
+            formData.append("bukti_kerusakan", newRiwayat.bukti);
+
+            const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/kerusakan`, formData);
+            if (!response.data.success) throw new Error(response.data.message);
+
+            showNotification("Riwayat kerusakan berhasil ditambahkan.");
+            setNewRiwayat({ tanggal: "", deskripsi: "", bukti: null });
+            setIsModalTambahRiwayatKerusakanOpen(false);
+            refetchData();
+        } catch (error: any) {
+            showError(error.response?.data?.message || "Gagal menambahkan riwayat kerusakan.");
+        }
+    };
+
+    const handleDeleteRiwayat = async (riwayatId: string) => {
+        try {
+            await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/kerusakan/${riwayatId}`);
+            showNotification("Riwayat kerusakan berhasil dihapus.");
+            setIsModalRiwayatKerusakanOpen(false);
+            refetchData();
+        } catch (error) {
+            showError("Gagal menghapus riwayat kerusakan.");
         }
     };
 
@@ -168,28 +204,33 @@ export default function BoothCard({
     };
 
     // UI Colors
-    let cardColor = "border-gray-500";
-    let divColor = "bg-gray-500";
-    
-    if (status === "tidak disewa") { cardColor = "border-primary"; divColor = "bg-primary"; }
-    else if (status === "rusak") { cardColor = "border-yellow-500"; divColor = "bg-yellow-500"; }
-    else if (status === "disewa") { cardColor = "border-red-500"; divColor = "bg-red-500"; }
-    else if (status === "inspeksi") { cardColor = "border-purple-500"; divColor = "bg-purple-500"; }
+    const cardColor = "border-primary/30";
+    const divColor = "bg-primary";
+    const statusTextColor = "text-primary";
+    const iconColor = status === "tidak disewa"
+        ? "bg-emerald-500"
+        : status === "disewa"
+            ? "bg-blue-500"
+            : status === "inspeksi"
+                ? "bg-amber-500"
+                : status === "rusak"
+                    ? "bg-rose-500"
+                    : "bg-primary";
 
     return (
         <div className={`rounded-lg shadow-md w-full border pb-3 bg-white ${cardColor}`}>
             <div className={`${divColor} rounded-t-lg w-full justify-between flex px-4 py-2`}>
                 <h3 className="text-lg font-bold text-white">{boothName}</h3>
-                <div className="rounded-lg px-2 items-center flex justify-center border border-white">
+                <div className={`${iconColor} rounded-lg px-2.5 py-1 items-center flex justify-center border border-white/80`}>
                     {status === "tidak disewa" && <MdCheckCircle size={24} color="white" />}
                     {status === "rusak" && <MdWarning size={24} color="white" />}
-                    {status === "disewa" && <MdError size={24} color="white" />}
+                    {status === "disewa" && <MdStorefront size={24} color="white" />}
                     {status === "inspeksi" && <MdSearch size={24} color="white" />}
                 </div>
             </div>
             
             <div className="gap-2 ml-4 mt-2">
-                <p className="text-black font-semibold uppercase">Status: {status}</p>
+                <p className={`${statusTextColor} font-bold uppercase`}>Status: {status}</p>
                 <p className="text-gray-600 text-sm">Riwayat Kerusakan: {riwayatKerusakan.length} kejadian</p>
             </div>
             
@@ -199,12 +240,19 @@ export default function BoothCard({
                     onClick={openModalRiwayatKerusakan}
                 >
                     <MdCalendarToday size={16} className="mr-2" />
-                    Lihat / Tambah Riwayat Kerusakan
+                    Lihat Riwayat Kerusakan
+                </button>
+                <button
+                    className="bg-primary text-white flex flex-row w-full items-center justify-center py-1.5 px-3 rounded-lg hover:bg-[#245229]"
+                    onClick={() => setIsModalTambahRiwayatKerusakanOpen(true)}
+                >
+                    <MdAddCircle size={16} className="mr-2" />
+                    Tambah Kerusakan
                 </button>
 
                 {(status === "tidak disewa" || status === "") && (
                     <button
-                        className="bg-yellow-500 text-white w-full py-1.5 rounded-lg hover:bg-yellow-600 font-medium"
+                        className="bg-[#a94f47] text-white w-full py-1.5 rounded-lg hover:bg-[#913f38] font-medium"
                         onClick={handleTandaiRusak}
                     >
                         Tandai Rusak
@@ -213,7 +261,7 @@ export default function BoothCard({
                 
                 {status === "rusak" && (
                     <button
-                        className="bg-primary text-white w-full py-1.5 rounded-lg hover:opacity-80 font-medium"
+                        className="bg-primary text-white w-full py-1.5 rounded-lg hover:bg-[#245229] font-medium"
                         onClick={handleTandaiSudahDiperbaiki}
                     >
                         Tandai Sudah Diperbaiki
@@ -222,7 +270,7 @@ export default function BoothCard({
                 
                 {status === "disewa" && (
                     <button
-                        className="bg-purple-600 text-white w-full py-1.5 rounded-lg hover:bg-purple-700 font-medium"
+                        className="bg-[#90782d] text-white w-full py-1.5 rounded-lg hover:bg-[#806b26] font-medium"
                         onClick={() => setIsModalInspeksi(true)}
                     >
                         Booth Dikembalikan (Mulai Inspeksi)
@@ -312,6 +360,21 @@ export default function BoothCard({
                     </div>
                 </div>
             )}
+
+            <ModalRiwayatKerusakanBooth
+                isOpen={isModalRiwayatKerusakanOpen}
+                onClose={() => setIsModalRiwayatKerusakanOpen(false)}
+                riwayat={riwayatKerusakan}
+                onDelete={handleDeleteRiwayat}
+                isLoading={isLoadingRiwayat}
+            />
+            <ModalTambahRiwayatKerusakanBooth
+                isOpen={isModalTambahRiwayatKerusakanOpen}
+                onClose={() => setIsModalTambahRiwayatKerusakanOpen(false)}
+                newRiwayat={newRiwayat}
+                setNewRiwayat={setNewRiwayat}
+                onTambahRiwayat={submitTambahRiwayat}
+            />
         </div>
     );
 }

@@ -64,23 +64,32 @@ const PengajuanSewa: React.FC = () => {
           headers: { Authorization: `Bearer ${token}` }
         })
         .then((response) => {
-          const penyewaan = response.data.data[0];
+          const allRentals: any[] = response.data.data || [];
+
+          // Prioritas: DISEWA > INSPEKSI > MENUNGGU VERIFIKASI > DISETUJUI > MENUNGGU > DITOLAK > SELESAI
+          const priority = ['DISEWA', 'INSPEKSI', 'MENUNGGU VERIFIKASI', 'DISETUJUI', 'MENUNGGU', 'DITOLAK', 'SELESAI'];
+          const sorted = [...allRentals].sort((a, b) =>
+            (priority.indexOf(a.status) ?? 99) - (priority.indexOf(b.status) ?? 99)
+          );
+
+          const penyewaan = sorted[0];
           if (penyewaan) {
-            setRentalId(penyewaan.id_sewa);  // Store the rental ID
+            setRentalId(penyewaan.id_sewa);
+            const statusMap: Record<string, string> = {
+              'DISETUJUI': 'Disetujui',
+              'MENUNGGU': 'Menunggu',
+              'MENUNGGU VERIFIKASI': 'Menunggu Verifikasi',
+              'DITOLAK': 'Ditolak',
+              'DIPROSES': 'Diproses',
+              'DISEWA': 'Disetujui', // Treat as approved to show "Lihat Booth" button
+              'INSPEKSI': 'Disetujui',
+              'SELESAI': 'Disetujui',
+            };
             setFormData((prevData: RentalRequest) => ({
               ...prevData,
               durasiPenyewaan: penyewaan.durasi || 0,
               lokasiBooth: penyewaan.lokasi || "",
-              statusProses:
-                penyewaan.status === "DISETUJUI"
-                  ? "Disetujui"
-                  : penyewaan.status === "MENUNGGU"
-                  ? "Menunggu"
-                  : penyewaan.status === "DITOLAK"
-                  ? "Ditolak"
-                  : penyewaan.status === "DIPROSES"
-                  ? "Diproses"
-                  : "Menunggu",
+              statusProses: statusMap[penyewaan.status] || 'Menunggu',
             }));
           } else {
             setIsLoading(false);

@@ -28,7 +28,6 @@ export default function Login() {
         if (token && id_akun) {
             // Jika token ada, ambil biodata
             fetchBiodata(id_akun, token);
-            router.push("/");
         }
     }, [router]);
 
@@ -84,20 +83,14 @@ export default function Login() {
                 localStorage.removeItem('biodata')
 
             }
-            // Redirect berdasarkan role
-            if (role === 'PELANGGAN') {
-                if (biodataExists) {
-                    router.push('/pelanggan');
-                } else {
-                    router.push('/')
-                }
-            } else if (role === 'KEPALA DIVISI') {
-                router.push('/kepala-divisi');
-            } else if (role === 'DIREKTUR') {
-                router.push('/direktur');
-            } else {
-                router.push('/');
-            }
+            const dashboardPath = role === 'PELANGGAN'
+                ? (biodataExists ? '/pelanggan' : '/biodata-baru')
+                : role === 'KEPALA DIVISI'
+                    ? '/kepala-divisi'
+                    : role === 'DIREKTUR'
+                        ? '/direktur'
+                        : '/login';
+            router.push(dashboardPath);
 
         } catch (err) {
             if (axios.isAxiosError(err) && err.response?.status === 404) {
@@ -108,6 +101,8 @@ export default function Login() {
                 setBiodata(false);
             }
             localStorage.removeItem('biodata');
+            const role = localStorage.getItem('role');
+            router.push(role === 'PELANGGAN' ? '/biodata-baru' : role === 'KEPALA DIVISI' ? '/kepala-divisi' : role === 'DIREKTUR' ? '/direktur' : '/login');
         }
     };
 
@@ -150,27 +145,8 @@ export default function Login() {
                 localStorage.setItem('no_hp', response.data.no_hp);
                 localStorage.setItem('id_akun', response.data.id_akun);
 
-                fetchBiodata(response.data.id_akun, response.data.token);
-                const role = localStorage.getItem('role');
                 setIsNotificationVisible(true); // Tampilkan modal notifikasi
-                setTimeout(() => {
-                    if (role === 'PELANGGAN') {
-                        console.log(role)
-                        if (biodata === true) {
-                            router.push('/pelanggan');
-                            console.log(biodata)
-                        } else if (biodata === false) {
-                            router.push('/')
-                        } 
-
-                    } else if (role === 'KEPALA DIVISI') {
-                        router.push('/kepala-divisi');
-                    } else if (role === 'DIREKTUR') {
-                        router.push('/direktur');
-                    } else {
-                        router.push('/');
-                    }
-                }, 2000);
+                fetchBiodata(response.data.id_akun, response.data.token);
             } else {
                 setIsErrorModalVisible(true); // Tampilkan ErrorModal
             }

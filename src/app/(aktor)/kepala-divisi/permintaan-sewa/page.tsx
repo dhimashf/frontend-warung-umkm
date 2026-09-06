@@ -61,28 +61,36 @@ export default function PermintaanSewa() {
         if (rentalResponse.data.success) {
           const rentalData = rentalResponse.data.data;
 
-          const requests = rentalData.map((rental: any) => {
-            return {
-              id: rental.id_sewa,
-              nama: rental.nama, // Asal dari JOIN biodata
-              tanggalPermintaan: formatDate(rental.permintaan_dibuat),
-              noHp: rental.no_hp || "-", // Asal dari JOIN akun
-              nik: rental.nik, // Asal dari JOIN biodata
-              jenisKelamin: formatGender(rental.jenis_kelamin),
-              alamatDomisili: rental.alamat_domisili,
-              alamatKTP: rental.alamat_ktp,
-              fotoKTP: rental.foto_ktp,
-              durasiPenyewaan: rental.durasi,
-              status: rental.status,
-              lokasiBooth: rental.lokasi,
-              idbooth: rental.booth_id_booth,
-              mulaiSewa: rental.mulai_sewa,
-              akhirSewa: rental.akhir_sewa,
-              buktiBayar: rental.bukti_bayar,
-            };
-          });
+          const requests = rentalData
+            .filter((rental: any) => rental.status === "MENUNGGU" || rental.status === "MENUNGGU VERIFIKASI")
+            .map((rental: any) => {
+              return {
+                id: rental.id_sewa,
+                nama: rental.nama, // Asal dari JOIN biodata
+                tanggalPermintaan: formatDate(rental.permintaan_dibuat),
+                noHp: rental.no_hp || "-", // Asal dari JOIN akun
+                nik: rental.nik, // Asal dari JOIN biodata
+                jenisKelamin: formatGender(rental.jenis_kelamin),
+                alamatDomisili: rental.alamat_domisili,
+                alamatKTP: rental.alamat_ktp,
+                fotoKTP: rental.foto_ktp,
+                durasiPenyewaan: rental.durasi,
+                status: rental.status,
+                lokasiBooth: rental.lokasi,
+                idbooth: rental.booth_id_booth,
+                mulaiSewa: rental.mulai_sewa,
+                akhirSewa: rental.akhir_sewa,
+                buktiBayar: rental.bukti_bayar,
+              };
+            });
 
-          const validRequests = requests.filter((request: any) => request !== null) as RentalRequest[];
+          const validRequests = Array.from(
+            new Map(
+              requests
+                .filter((request: any) => request !== null)
+                .map((request: RentalRequest) => [request.id, request])
+            ).values()
+          ) as RentalRequest[];
           
           // Sort so MENUNGGU and MENUNGGU VERIFIKASI are at the top
           validRequests.sort((a, b) => {
@@ -126,16 +134,14 @@ export default function PermintaanSewa() {
   };
 
   const handleSave = (id: number, selectedBooth: string) => {
-    setRentalRequests(prev => prev.map(req => 
-      req.id === id ? { ...req, status: 'DISETUJUI', idbooth: selectedBooth } : req
-    ));
+    // Remove from list after approval — it will appear in monitoring tab
+    setRentalRequests(prev => prev.filter(req => req.id !== id));
     closeModal();
   };
 
   const handleDeleteRequest = (id: number) => {
-    setRentalRequests(prev => prev.map(req => 
-      req.id === id ? { ...req, status: 'DITOLAK' } : req
-    ));
+    // Remove from list after rejection
+    setRentalRequests(prev => prev.filter(req => req.id !== id));
     closeModal();
   };
 
@@ -147,9 +153,9 @@ export default function PermintaanSewa() {
         {rentalRequests.length === 0 ? (
           <p className="text-gray-500 col-span-full">Tidak ada pengajuan sewa saat ini.</p>
         ) : (
-          rentalRequests.map((request) => (
+          rentalRequests.map((request, index) => (
             <RentalRequestCard
-              key={request.id}
+              key={`rental-request-${request.id}-${index}`}
               name={request.nama}
               tanggalPermintaan={request.tanggalPermintaan}
               noHp={request.noHp}
