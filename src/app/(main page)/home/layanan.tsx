@@ -3,7 +3,9 @@ import { CiCreditCard1 } from "react-icons/ci";
 import { GoContainer } from "react-icons/go";
 import { IoCashOutline } from "react-icons/io5";
 import React from "react";
-import { useRouter } from "next/navigation"; // Import useRouter dari Next.js
+import { useRouter } from "next/navigation";
+import { FadeIn } from "@/components/animations/FadeIn";
+import { StaggerContainer, StaggerItem } from "@/components/animations/Stagger";
 
 const LayananFrame: React.FC = () => {
   const router = useRouter();  // Inisialisasi router
@@ -15,7 +17,7 @@ const LayananFrame: React.FC = () => {
 
   return (
     <section className="w-full py-12 md:py-16 lg:py-20">
-      <div className="container px-4 md:px-6 max-w-6xl mx-auto">
+      <FadeIn className="container px-4 md:px-6 max-w-6xl mx-auto">
         <div className="flex flex-col items-center justify-center space-y-4 text-center text-black">
           <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
             Apa saja layanan kami?
@@ -25,9 +27,9 @@ const LayananFrame: React.FC = () => {
             serta pembelian yang dapat dilakukan secara cash maupun kredit
           </p>
         </div>
-        <div className="grid max-w-5xl grid-cols-1 gap-6 md:grid-cols-3 lg:gap-8 mt-8 mx-auto">
+        <StaggerContainer className="grid max-w-5xl grid-cols-1 gap-6 md:grid-cols-3 lg:gap-8 mt-8 mx-auto">
           {/* Card untuk Cash */}
-          <div
+          <StaggerItem
             className="relative flex hover:bg-primary hover:text-white hover:shadow-lg group flex-col items-center p-12 bg-foreground shadow-md rounded-3xl space-y-4 cursor-pointer"
             onClick={() => navigateToTab('Cash')} // Menambahkan onClick untuk navigasi
           >
@@ -38,9 +40,9 @@ const LayananFrame: React.FC = () => {
             <p className="text-sm group-hover:text-white text-gray-600 text-center">
               Pembayaran langsung secara lunas
             </p>
-          </div>
+          </StaggerItem>
           {/* Card untuk Kredit */}
-          <div
+          <StaggerItem
             className="relative flex hover:bg-primary hover:text-white hover:shadow-lg group   flex-col items-center p-12 bg-foreground shadow-md rounded-3xl space-y-4 cursor-pointer"
             onClick={() => navigateToTab('Kredit')} // Menambahkan onClick untuk navigasi
           >
@@ -51,9 +53,9 @@ const LayananFrame: React.FC = () => {
             <p className="text-sm text-gray-600 group-hover:text-white text-center">
               Pembayaran dengan uang muka serta cicilan hingga 5x
             </p>
-          </div>
+          </StaggerItem>
           {/* Card untuk Sewa */}
-          <div
+          <StaggerItem
             className="relative flex hover:bg-primary hover:text-white hover:shadow-lg group flex-col items-center p-12 bg-[#FCFCFC] shadow-md rounded-3xl space-y-4 cursor-pointer"
             onClick={() => navigateToTab('Sewa')} // Menambahkan onClick untuk navigasi
           >
@@ -64,9 +66,9 @@ const LayananFrame: React.FC = () => {
             <p className="text-sm text-gray-600 group-hover:text-white text-center">
               Penyewaan booth
             </p>
-          </div>
-        </div>
-      </div>
+          </StaggerItem>
+        </StaggerContainer>
+      </FadeIn>
     </section>
   );
 };

@@ -1,10 +1,11 @@
 "use client";
 import Accordion from "@/components/Accordion";
 import { FaMapMarkerAlt, FaPhone, FaEnvelope } from 'react-icons/fa';
+import { FadeIn } from "@/components/animations/FadeIn";
 
 export default function TentangFrame() {
   return (
-    <section className="max-w-6xl bg-foreground rounded-xl shadow-xl mx-auto min-h-screen flex flex-col text-black">
+    <FadeIn className="max-w-6xl bg-foreground rounded-xl shadow-xl mx-auto min-h-screen flex flex-col text-black">
       <div className="flex-grow  container mx-auto px-8 py-8">
         <h1 className="text-center text-5xl font-bold">Tentang Kami</h1>
         {/* Contact Information */}
@@ -76,6 +77,6 @@ export default function TentangFrame() {
           </div>
 
 
-    </section>
+    </FadeIn>
   );
 }

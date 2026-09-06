@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { MdLogout } from "react-icons/md";
 import { AiOutlineUser } from "react-icons/ai";
 import ConfirmationPopup from "@/components/ConfirmationPopUp";
-
+import { motion, useReducedMotion } from "framer-motion";
 
 
 const Navbar: React.FC = () => {
@@ -97,8 +97,15 @@ const Navbar: React.FC = () => {
     { name: "Tentang", href: "/tentang" },
   ];
 
+  const shouldReduceMotion = useReducedMotion();
+
   return (
-    <nav className="bg-background fixed w-full h-auto z-20 top-0 start-0 border-b">
+    <motion.nav 
+      initial={{ opacity: 0, y: shouldReduceMotion ? 0 : -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: shouldReduceMotion ? 0 : 0.4 }}
+      className="bg-background fixed w-full h-auto z-20 top-0 start-0 border-b"
+    >
       <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
         <a href="#" className="flex items-center space-x-3 rtl:space-x-reverse">
           <span className="self-center text-lg font-black font-outfit whitespace-nowrap text-primary md:text-2xl">
@@ -265,7 +272,7 @@ const Navbar: React.FC = () => {
           </ul>
         </div>
       </div>
-    </nav>
+    </motion.nav>
   );
 };
 

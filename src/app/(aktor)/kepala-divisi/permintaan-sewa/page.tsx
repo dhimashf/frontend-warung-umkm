@@ -82,7 +82,7 @@ export default function PermintaanSewa() {
             };
           });
 
-          const validRequests = requests.filter((request) => request !== null) as RentalRequest[];
+          const validRequests = requests.filter((request: any) => request !== null) as RentalRequest[];
           
           // Sort so MENUNGGU and MENUNGGU VERIFIKASI are at the top
           validRequests.sort((a, b) => {

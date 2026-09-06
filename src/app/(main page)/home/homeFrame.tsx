@@ -1,17 +1,19 @@
 "use client";
 import React from "react";
 import {useRouter} from "next/navigation";
-
+import { motion, useReducedMotion } from "framer-motion";
+import { StaggerContainer, StaggerItem } from "@/components/animations/Stagger";
 
 const HomeFrame: React.FC = () => {
   const router = useRouter();
+  const shouldReduceMotion = useReducedMotion();
   return (
     <section>
       <div className="flex flex-col mx-auto md:flex-row items-center mb-20 justify-between gap-12">
         {/* Teks dan Button */}
-        <div className="w-full md:w-1/2 h-full flex flex-col space-y-6 justify-center">
+        <StaggerContainer className="w-full md:w-1/2 h-full flex flex-col space-y-6 justify-center">
           {/* Heading */}
-          <div className="h-auto md:h-auto flex items-start justify-start">
+          <StaggerItem className="h-auto md:h-auto flex items-start justify-start">
             <p className="font-bold text-3xl sm:text-4xl md:text-5xl text-black leading-snug">
               Dukung <span className="text-primary">Usaha UMKM</span> dengan Akses
               Mudah ke{" "}
@@ -19,10 +21,10 @@ const HomeFrame: React.FC = () => {
                 Barang dan Peralatan Berkualitas!
               </span>
             </p>
-          </div>
+          </StaggerItem>
 
           {/* Subheading & Tombol */}
-          <div className="space-y-4">
+          <StaggerItem className="space-y-4">
             <p className="text-md sm:text-lg md:text-xl w-full md:w-4/5 text-black leading-relaxed">
               Menyediakan berbagai barang dan peralatan UMKM berkualitas yang
               bisa dibeli atau disewa dengan mudah...
@@ -39,11 +41,15 @@ const HomeFrame: React.FC = () => {
                 Layanan Kami
               </button>
             </div>
-          </div>
-        </div>
+          </StaggerItem>
+        </StaggerContainer>
 
         {/*Gambar*/}
-        <div className="flex-1 justify-center hidden lg:block">
+        <motion.div 
+          className="flex-1 justify-center hidden lg:block"
+          animate={shouldReduceMotion ? {} : { y: [0, -8, 0] }}
+          transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
+        >
           <div
             className="w-full  h-[600px] rounded-t-full"
             style={{
@@ -52,7 +58,7 @@ const HomeFrame: React.FC = () => {
               backgroundPosition: "center",
             }}
           ></div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );

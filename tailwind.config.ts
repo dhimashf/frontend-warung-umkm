@@ -1,6 +1,5 @@
 import type { Config } from "tailwindcss";
 
-
 export default {
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
@@ -18,6 +17,16 @@ export default {
       },
       fontFamily: {
         outfit: ['var(--font-outfit)',],
+      },
+      keyframes: {
+        shimmer: {
+          "100%": {
+            transform: "translateX(100%)",
+          },
+        },
+      },
+      animation: {
+        shimmer: "shimmer 1.5s infinite",
       },
     },
   },

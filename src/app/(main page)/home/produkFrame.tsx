@@ -3,6 +3,8 @@ import Link from "next/link";
 import React, { useState, useEffect } from "react";
 import ProductCard from "@/components/ProductCard";
 import ProductDetailModal from "@/components/ProductDetailModal"; // Import modal
+import { FadeIn } from "@/components/animations/FadeIn";
+import { StaggerContainer, StaggerItem } from "@/components/animations/Stagger";
 
 // Define the interface for the API response item
 interface APIProduct {
@@ -68,7 +70,7 @@ const ProdukFrame: React.FC = () => {
 
   return (
     <section className="py-12">
-      <div className="max-w-6xl">
+      <FadeIn className="max-w-6xl mx-auto">
         <div className="flex flex-col md:flex-row items-start md:items-center md:justify-between mb-8 gap-4">
           <div className="max-w-xl text-black">
             <h2 className="text-3xl md:text-5xl font-bold mb-2">
@@ -92,9 +94,9 @@ const ProdukFrame: React.FC = () => {
         </div>
 
         {/* Product grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 text-black">
+        <StaggerContainer className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 text-black">
           {products.map((product) => (
-            <div
+            <StaggerItem
               key={product.id}
               className="w-full shadow-lg hover:shadow-xl bg-white rounded-lg"
             >
@@ -106,10 +108,10 @@ const ProdukFrame: React.FC = () => {
                 image={product.foto} // Maps 'foto' to 'image'
                 onClick={() => handleProductClick(product)} // Maps the click handler
               />
-            </div>
+            </StaggerItem>
           ))}
-        </div>
-      </div>
+        </StaggerContainer>
+      </FadeIn>
 
       {/* Show modal when a product is selected */}
       {selectedProduct && (
