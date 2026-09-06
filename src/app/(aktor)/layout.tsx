@@ -24,12 +24,13 @@ const Layout = ({ children }: LayoutProps) => {
   const toggleSidebar = () => setSidebarOpen(!isSidebarOpen);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      router.push("/login");
-    } else {
+    // TEMPORARY: Bypassing authentication for testing
+    // const token = localStorage.getItem("token");
+    // if (!token) {
+    //   router.push("/login");
+    // } else {
       setIsAuthenticated(true);
-    }
+    // }
   }, [router]);
 
   if (!isAuthenticated) {

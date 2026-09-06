@@ -22,7 +22,9 @@ interface RentalRequest {
   idbooth: string | null;
   mulaiSewa: string | null;
   akhirSewa: string | null;
+  buktiBayar?: string | null;
 }
+
 interface APIRentalRequest {
   id_sewa: number;
   nama: string;
@@ -39,72 +41,59 @@ interface APIRentalRequest {
   booth_id_booth: string | null;
   mulai_sewa: string | null;
   akhir_sewa: string | null;
+  bukti_bayar?: string | null;
 }
 
-export default function Home() {
+export default function PermintaanSewa() {
   const [rentalRequests, setRentalRequests] = useState<RentalRequest[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<RentalRequest | null>(null);
   const { showNotification } = useModal();
 
   useEffect(() => {
     const fetchData = async () => {
+      const token = localStorage.getItem("token");
       try {
         const rentalResponse = await axios.get(
-          "https://backend-umkm-riau.vercel.app/api/penyewaan"
+          `${process.env.NEXT_PUBLIC_API_URL}/api/penyewaan`,
+          { headers: { Authorization: `Bearer ${token}` } }
         );
 
         if (rentalResponse.data.success) {
           const rentalData = rentalResponse.data.data;
 
-          const requests = await Promise.all(
-            rentalData.map(async (rental: APIRentalRequest) => {
-              try {
-                const biodataResponse = await axios.get(
-                  `https://backend-umkm-riau.vercel.app/api/biodata/nik/${rental.biodata_nik}`
-                );
+          const requests = rentalData.map((rental: any) => {
+            return {
+              id: rental.id_sewa,
+              nama: rental.nama, // Asal dari JOIN biodata
+              tanggalPermintaan: formatDate(rental.permintaan_dibuat),
+              noHp: rental.no_hp || "-", // Asal dari JOIN akun
+              nik: rental.nik, // Asal dari JOIN biodata
+              jenisKelamin: formatGender(rental.jenis_kelamin),
+              alamatDomisili: rental.alamat_domisili,
+              alamatKTP: rental.alamat_ktp,
+              fotoKTP: rental.foto_ktp,
+              durasiPenyewaan: rental.durasi,
+              status: rental.status,
+              lokasiBooth: rental.lokasi,
+              idbooth: rental.booth_id_booth,
+              mulaiSewa: rental.mulai_sewa,
+              akhirSewa: rental.akhir_sewa,
+              buktiBayar: rental.bukti_bayar,
+            };
+          });
 
-                const biodata = biodataResponse.data.data;
+          const validRequests = requests.filter((request) => request !== null) as RentalRequest[];
+          
+          // Sort so MENUNGGU and MENUNGGU VERIFIKASI are at the top
+          validRequests.sort((a, b) => {
+            const isAPending = a.status === 'MENUNGGU' || a.status === 'MENUNGGU VERIFIKASI';
+            const isBPending = b.status === 'MENUNGGU' || b.status === 'MENUNGGU VERIFIKASI';
+            
+            if (isAPending && !isBPending) return -1;
+            if (!isAPending && isBPending) return 1;
+            return 0;
+          });
 
-                let noHp = "-";
-                if (biodata.akun_id_akun) {
-                  const akunResponse = await axios.get(
-                    `https://backend-umkm-riau.vercel.app/api/akun/id/${biodata.akun_id_akun}`
-                  );
-                  noHp = akunResponse.data.data.no_hp || "-";
-                }
-
-                return {
-                  id: rental.id_sewa,
-                  nama: biodata.nama,
-                  tanggalPermintaan: formatDate(rental.permintaan_dibuat),
-                  noHp: noHp,
-                  nik: biodata.nik,
-                  jenisKelamin: formatGender(biodata.jenis_kelamin),
-                  alamatDomisili: biodata.alamat_domisili,
-                  alamatKTP: biodata.alamat,
-                  fotoKTP: biodata.foto_ktp,
-                  durasiPenyewaan: rental.durasi,
-                  status: rental.status,
-                  lokasiBooth: rental.lokasi,
-                  idbooth: rental.booth_id_booth,
-                  mulaiSewa: rental.mulai_sewa,
-                  akhirSewa: rental.akhir_sewa,
-
-                };
-              } catch (error) {
-                console.error(
-                  `Error fetching biodata or akun for rental ID ${rental.id_sewa}:`,
-                  error
-                );
-                return null;
-              }
-            })
-          );
-
-          // Filter out any null values (in case of errors in fetching data)
-          const validRequests = requests.filter((request) => request !== null);
-
-          console.log(validRequests);
           setRentalRequests(validRequests);
         }
       } catch (error) {
@@ -115,14 +104,15 @@ export default function Home() {
     fetchData();
   }, []);
 
-
   const formatGender = (gender: string) => {
     return gender === 'L' ? 'Laki-Laki' : gender === 'P' ? 'Perempuan' : 'Tidak Diketahui';
   };
+  
   const formatDate = (isoDate: string) => {
+    if (!isoDate) return "-";
     const date = new Date(isoDate);
     const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0'); // Bulan dimulai dari 0
+    const month = String(date.getMonth() + 1).padStart(2, '0'); 
     const year = date.getFullYear();
     return `${day}-${month}-${year}`;
   };
@@ -133,42 +123,48 @@ export default function Home() {
 
   const closeModal = () => {
     setSelectedRequest(null);
-    window.location.reload(); // Reload the page when the modal is closed
   };
 
-
-  const handleSave = () => {
-    showNotification("Booth berhasil dipilih dan disimpan!");
+  const handleSave = (id: number, selectedBooth: string) => {
+    setRentalRequests(prev => prev.map(req => 
+      req.id === id ? { ...req, status: 'DISETUJUI', idbooth: selectedBooth } : req
+    ));
     closeModal();
   };
 
   const handleDeleteRequest = (id: number) => {
-    const updatedRequests = rentalRequests.filter((request) => request.id !== id);
-    setRentalRequests(updatedRequests);
-    showNotification("Pengajuan berhasil ditolak!");
+    setRentalRequests(prev => prev.map(req => 
+      req.id === id ? { ...req, status: 'DITOLAK' } : req
+    ));
     closeModal();
   };
 
   return (
-    <div className="bg-gray-100 p-6">
+    <div className="bg-gray-100 p-6 min-h-screen">
+      <h1 className="text-2xl font-bold text-primary mb-6">Kelola Permintaan Sewa</h1>
+      
       <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-        {rentalRequests.map((request) => (
-          <RentalRequestCard
-            key={request.id}
-            name={request.nama}
-            tanggalPermintaan={request.tanggalPermintaan}
-            noHp={request.noHp}
-            status={request.status}
-            onDetailClick={() => handleDetailClick(request)}
-          />
-        ))}
+        {rentalRequests.length === 0 ? (
+          <p className="text-gray-500 col-span-full">Tidak ada pengajuan sewa saat ini.</p>
+        ) : (
+          rentalRequests.map((request) => (
+            <RentalRequestCard
+              key={request.id}
+              name={request.nama}
+              tanggalPermintaan={request.tanggalPermintaan}
+              noHp={request.noHp}
+              status={request.status}
+              onDetailClick={() => handleDetailClick(request)}
+            />
+          ))
+        )}
       </div>
 
       <PengajuanSewaModal
         request={selectedRequest}
         onClose={closeModal}
         onSave={handleSave}
-        onDelete={() => handleDeleteRequest(selectedRequest?.id ?? 0)}
+        onDelete={handleDeleteRequest}
       />
     </div>
   );

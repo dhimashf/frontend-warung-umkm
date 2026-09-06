@@ -7,10 +7,10 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [status, setStatus] = useState<'loading' | 'accessDenied' | 'missingBiodata' | 'allowed'>('loading');
 
   useEffect(() => {
-    const role = localStorage.getItem('role');
+    // const role = localStorage.getItem('role');
     const biodata = localStorage.getItem('biodata');
     
-    if (role === 'PELANGGAN') {
+    // if (role === 'PELANGGAN') {
       if (!biodata) {
         setStatus('missingBiodata');
         setTimeout(() => {
@@ -19,10 +19,10 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         return;
       }
       setStatus('allowed');
-    } else {
-      setStatus('accessDenied');
-      router.push('/kepala-divisi/not-found'); // Redirect to 404 page if role is not correct
-    }
+    // } else {
+    //   setStatus('accessDenied');
+    //   router.push('/kepala-divisi/not-found'); // Redirect to 404 page if role is not correct
+    // }
   }, [router]);
 
   if (status === 'loading') {

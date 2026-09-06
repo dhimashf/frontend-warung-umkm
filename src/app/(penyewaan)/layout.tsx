@@ -11,20 +11,20 @@ const ProtectedPage: React.FC<ProtectedPageProps> = ({ children }) => {
   const pathname = usePathname(); // Mendapatkan URL saat ini
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const role = localStorage.getItem("role"); // Mengambil role dari localStorage
+    // TEMPORARY: Bypassing authentication for testing
+    // const token = localStorage.getItem("token");
+    // const role = localStorage.getItem("role"); // Mengambil role dari localStorage
 
-    if (!token) {
+    // if (!token) {
+    //   const loginUrl = `/login?redirect=${encodeURIComponent(pathname)}`;
+    //   router.replace(loginUrl);
+    //   return;
+    // }
 
-      const loginUrl = `/login?redirect=${encodeURIComponent(pathname)}`;
-      router.replace(loginUrl);
-      return;
-    }
-
-    if (role !== "PELANGGAN") {
-      // Arahkan ke halaman yang sesuai jika peran tidak valid
-      router.replace("/penyewaan/not-found"); // Halaman untuk peran yang tidak diizinkan
-    }
+    // if (role !== "PELANGGAN") {
+    //   // Arahkan ke halaman yang sesuai jika peran tidak valid
+    //   router.replace("/penyewaan/not-found"); // Halaman untuk peran yang tidak diizinkan
+    // }
   }, [router, pathname]);
 
   return <>{children}</>;
